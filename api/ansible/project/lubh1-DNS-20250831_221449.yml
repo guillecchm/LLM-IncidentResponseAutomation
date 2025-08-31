@@ -1,0 +1,47 @@
+---
+- name: Mitigate DNS Exfiltration on Router
+  hosts: router1
+  connection: network_cli
+  gather_facts: false
+  tasks:
+    - name: Find existing static DNS entries for malicious domain
+      community.routeros.command:
+        commands:
+          - /ip dns static print terse where name="*.malicious.server"
+      register: existing_dns_entries_output
+      changed_when: false
+
+    - name: Remove existing static DNS entries for malicious domain
+      community.routeros.command:
+        commands:
+          - "/ip dns static remove numbers={{ item.id }}"
+      loop: "{{ existing_dns_entries_output.stdout_lines | community.routeros.parse_id }}"
+      when: existing_dns_entries_output.stdout_lines | length > 0
+
+    - name: Add static DNS entry to blackhole malicious domain
+      community.routeros.command:
+        commands:
+          - /ip dns static add name="*.malicious.server" address=0.0.0.0 comment="Blackhole DNS exfiltration domain"
+
+- name: Contain DNS Exfiltration on Workstation
+  hosts: lubh1
+  become: true
+  tasks:
+    - name: Allow outbound DNS to internal DNS server (192.168.1.1)
+      ansible.builtin.iptables:
+        chain: OUTPUT
+        destination: 192.168.1.1
+        protocol: udp
+        destination_port: 53
+        jump: ACCEPT
+        comment: "Allow DNS to internal server 192.168.1.1 for lubh1"
+        state: present
+
+    - name: Block all other outbound DNS from lubh1
+      ansible.builtin.iptables:
+        chain: OUTPUT
+        protocol: udp
+        destination_port: 53
+        jump: DROP
+        comment: "Block all other outbound DNS to prevent exfiltration bypass from lubh1"
+        state: present

@@ -1,0 +1,23 @@
+---
+- hosts: lubh1
+  become: true
+  tasks:
+    - name: Block malicious IP address using iptables
+      ansible.builtin.iptables:
+        chain: INPUT
+        source: 192.168.1.4
+        protocol: tcp
+        destination_port: 22
+        jump: DROP
+        comment: "Blocked SSH brute-force attack from 192.168.1.4"
+        state: present
+        direction: INPUT
+    - name: Log the blocked IP
+      ansible.builtin.shell:
+        cmd: echo "$(date) - Blocked SSH brute-force attack from 192.168.1.4" >> /var/log/iptables.log
+      args:
+        executable: /bin/bash
+    - name: Flush any previous failed login attempts for the user
+      ansible.builtin.command:
+        cmd: "authconfig --update"
+      ignore_errors: true

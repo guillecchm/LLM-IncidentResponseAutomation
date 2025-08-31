@@ -1,0 +1,23 @@
+---
+- name: Mitigate C2 Communication on Host
+  hosts: lubh2
+  become: true
+  tasks:
+    - name: Block outbound TCP traffic to known C2 IP on port 8080
+      ansible.builtin.iptables:
+        chain: OUTPUT
+        destination: 100.68.52.65
+        protocol: tcp
+        destination_port: 8080
+        jump: DROP
+        comment: "Blocked outbound C2 communication to 100.68.52.65:8080"
+
+- name: Router configuration to block C2 traffic
+  hosts: router1
+  connection: network_cli
+  gather_facts: false
+  tasks:
+    - name: Add firewall rule to drop C2 traffic from internal network
+      community.routeros.command:
+        commands:
+          - /ip firewall filter add chain=forward src-address=192.168.1.0/24 dst-address=100.68.52.65 dst-port=8080 protocol=tcp action=drop comment="Drop C2 traffic from office LAN to known C2 server"

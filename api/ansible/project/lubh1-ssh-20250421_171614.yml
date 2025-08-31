@@ -1,0 +1,48 @@
+---
+- hosts: lubh1
+  become: true
+  tasks:
+    - name: Block malicious IP address using iptables
+      iptables:
+        chain: INPUT
+        source: 192.168.56.1
+        protocol: tcp
+        destination_port: 22
+        jump: DROP
+        comment: "Blocked brute force SSH attack from 192.168.56.1"
+        state: present
+      register: iptables_rule
+
+    - name: Save iptables rules
+      command: iptables-save
+      args:
+        creates: /etc/iptables/rules.v4
+      when: iptables_rule.changed
+
+    - name: Create iptables rules file if it doesn't exist
+      file:
+        path: /etc/iptables/rules.v4
+        state: touch
+      when: not iptables_rule.changed and not lookup('file', '/etc/iptables/rules.v4', errors='ignore')
+
+    - name: Persist iptables rules across reboots
+      lineinfile:
+        path: /etc/network/interfaces
+        regexp: '^post-up iptables-restore < /etc/iptables/rules.v4'
+        line: 'post-up iptables-restore < /etc/iptables/rules.v4'
+        insertafter: 'auto eth0'
+        state: present
+      when: iptables_rule.changed
+
+    - name: Ensure iptables-persistent is installed
+      apt:
+        name: iptables-persistent
+        state: present
+      when: ansible_distribution == "Ubuntu"
+
+    - name: Reload iptables rules (Ubuntu)
+      systemd:
+        name: netfilter-persistent
+        state: restarted
+        enabled: true
+      when: ansible_distribution == "Ubuntu" and iptables_rule.changed

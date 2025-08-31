@@ -1,0 +1,111 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "additionalProperties": true,
+    "required": [
+        "type",
+        "protocol",
+        "version",
+        "metric",
+        "nodes",
+        "links"
+    ],
+    "properties": {
+        "type": {
+            "type": "string",
+            "enum": ["NetworkGraph"]
+        },
+        "protocol": {
+            "type": "string"
+        },
+        "version": {
+            "type": "string"
+        },
+        "revision": {
+            "type": "string"
+        },
+        "metric": {
+            "type": "string"
+        },
+        "router_id": {
+            "type": "string"
+        },
+        "topology_id": {
+            "type": "string"
+        },
+        "label": {
+            "type": "string"
+        },
+        "nodes": {
+            "type": "array",
+            "title": "Nodes",
+            "uniqueItems": true,
+            "additionalItems": true,
+            "items": [
+                {
+                    "title": "Node",
+                    "type": "object",
+                    "additionalProperties": true,
+                    "required": [
+                        "id"
+                    ],
+                    "properties": {
+                        "id": {
+                            "type": "string"
+                        },
+                        "label": {
+                            "type": "string"
+                        },
+                        "local_addresses": {
+                            "type": "array",
+                            "additionalItems": true,
+                            "uniqueItems": true,
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "properties": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            ]
+        },
+        "links": {
+            "type": "array",
+            "title": "Links",
+            "uniqueItems": true,
+            "additionalItems": true,
+            "items": {
+                "type": "object",
+                "title": "Link",
+                "additionalProperties": true,
+                "required": [
+                    "source",
+                    "target",
+                    "cost"
+                ],
+                "properties": {
+                    "source": {
+                        "type": "string"
+                    },
+                    "target": {
+                        "type": "string"
+                    },
+                    "cost": {
+                        "type": "number",
+                        "default": 1
+                    },
+                    "cost_text": {
+                        "type": "string"
+                    },
+                    "properties": {
+                        "type": "object",
+                        "additionalProperties": true
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,38 @@
+---
+- hosts: lubh1
+  become: true
+  tasks:
+    - name: Block DNS traffic to suspicious domain
+      iptables:
+        chain: OUTPUT
+        protocol: udp
+        destination_port: 53
+        match: string
+        string: archive.ubuntu.com
+        jump: DROP
+        string_algo: bm
+        comment: "Block DNS exfiltration attempt to archive.ubuntu.com"
+
+    - name: Block DNS traffic to suspicious destination IP
+      iptables:
+        chain: OUTPUT
+        protocol: udp
+        destination: 192.168.1.1
+        destination_port: 53
+        jump: DROP
+        comment: "Block DNS exfiltration attempt to DNS server 192.168.1.1"
+---
+- hosts: Mikrotik01
+  connection: network_cli
+  gather_facts: false
+
+  tasks:
+    - name: Block DNS traffic from source IP on Mikrotik
+      mikrotik_firewall:
+        state: present
+        chain: forward
+        src_address: 192.168.1.2
+        protocol: udp
+        dst_port: 53
+        action: drop
+        comment: "Block DNS exfiltration from 192.168.1.2"

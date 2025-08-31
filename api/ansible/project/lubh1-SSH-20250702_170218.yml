@@ -1,0 +1,28 @@
+---
+- name: Mitigate SSH Brute Force Attack
+  hosts: lubh1
+  gather_facts: false
+  tasks:
+    - name: Block malicious IP address using iptables
+      become: true
+      ansible.builtin.iptables:
+        chain: INPUT
+        source: 192.168.1.4
+        protocol: tcp
+        destination_port: 22
+        jump: DROP
+        comment: "Blocked SSH brute force attack from 192.168.1.4"
+        state: present
+        direction: INPUT
+    - name: Append IP to /etc/hosts.deny to block SSH login attempts
+      become: true
+      ansible.builtin.lineinfile:
+        path: /etc/hosts.deny
+        line: "sshd: 192.168.1.4"
+        state: present
+        create: true
+    - name: Flush all previous failed login attempts with the affected user
+      become: true
+      ansible.builtin.command:
+        cmd: "authconfig --restore-login --name=sshd"
+      changed_when: false

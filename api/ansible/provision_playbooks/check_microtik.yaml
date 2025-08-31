@@ -1,0 +1,11 @@
+- name: Consultar identidad MikroTik
+  hosts: mikrotik
+  gather_facts: no
+  collections:
+    - community.routeros
+  tasks:
+    - name: Ejecutar comando
+      community.routeros.command:
+        commands:
+          - /system/identity/print
+

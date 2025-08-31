@@ -1,0 +1,28 @@
+---
+- hosts: lubh1
+  gather_facts: false
+  tasks:
+    - name: Block SSH access from the offending IP address using iptables
+      become: true
+      iptables:
+        chain: INPUT
+        source: 192.168.56.1
+        protocol: tcp
+        destination_port: 22
+        jump: DROP
+        comment: "Blocked SSH brute force attack from 192.168.56.1"
+        state: present
+    - name: Save iptables rules (if necessary - depends on distribution)
+      become: true
+      command: iptables-save
+      args:
+        warn: false
+      when: ansible_os_family == "Debian" or ansible_os_os_family == "RedHat"
+
+- hosts: Mikrotik
+  gather_facts: false
+  tasks:
+    - name: Block SSH access from the offending IP address using Mikrotik firewall
+      routeros_command:
+        commands:
+          - /ip/firewall/filter/add chain=input src-address=192.168.56.1 protocol=tcp dst-port=22 action=drop comment="Blocked SSH brute force attack from 192.168.56.1"

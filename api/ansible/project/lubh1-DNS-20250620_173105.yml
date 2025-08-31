@@ -1,0 +1,38 @@
+---
+- name: Mitigate DNS Exfiltration Attack
+  hosts: lubh1
+  gather_facts: false
+  tasks:
+    - name: Block DNS traffic to suspicious DNS server
+      become: true
+      iptables:
+        chain: OUTPUT
+        destination: 192.168.1.1
+        protocol: udp
+        dport: 53
+        jump: DROP
+        comment: "Block DNS exfiltration attempt to 192.168.1.1"
+        state: present
+    - name: Flush DNS cache
+      become: true
+      command: systemd-resolve --flush-caches
+      register: flush_result
+      ignore_errors: true
+    - name: Restart NetworkManager
+      become: true
+      service:
+        name: NetworkManager
+        state: restarted
+      when: flush_result is failed
+- name: Mitigate DNS Exfiltration Attack on Router
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Block DNS traffic from suspicious host
+      community.routeros.routeros_command:
+        host: 192.168.0.1
+        username: admin
+        password: ""
+        commands:
+          - /ip/firewall/filter/add chain=forward src-address=192.168.1.2 protocol=udp dst-port=53 action=drop comment="Block DNS exfiltration from 192.168.1.2"

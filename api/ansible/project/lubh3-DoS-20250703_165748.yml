@@ -1,0 +1,55 @@
+---
+- name: Mitigate Wazuh Agent Buffer Flooding
+  hosts: lubh3
+  become: true
+  tasks:
+    - name: Ensure <client_buffer> tag exists within <client>
+      ansible.builtin.lineinfile:
+        path: /var/ossec/etc/ossec.conf
+        regexp: '^\s*<client_buffer>'
+        line: '    <client_buffer>'
+        insertafter: '^\s*<client>$'
+        state: present
+      notify: Restart Wazuh Agent
+
+    - name: Ensure <disabled> tag for client_buffer is set to no
+      ansible.builtin.lineinfile:
+        path: /var/ossec/etc/ossec.conf
+        regexp: '^\s*<disabled>(yes|no)</disabled>'
+        line: '      <disabled>no</disabled>'
+        insertafter: '^\s*<client_buffer>$'
+        state: present
+      notify: Restart Wazuh Agent
+
+    - name: Set max_size for client_buffer to increase capacity
+      ansible.builtin.lineinfile:
+        path: /var/ossec/etc/ossec.conf
+        regexp: '^\s*<max_size>[0-9]*</max_size>'
+        line: '      <max_size>500000</max_size>'
+        insertafter: '^\s*<disabled>no</disabled>$'
+        state: present
+      notify: Restart Wazuh Agent
+
+    - name: Set events_per_second for client_buffer to increase throughput
+      ansible.builtin.lineinfile:
+        path: /var/ossec/etc/ossec.conf
+        regexp: '^\s*<events_per_second>[0-9]*</events_per_second>'
+        line: '      <events_per_second>1000</events_per_second>'
+        insertafter: '^\s*<max_size>500000</max_size>$'
+        state: present
+      notify: Restart Wazuh Agent
+
+    - name: Ensure </client_buffer> tag exists
+      ansible.builtin.lineinfile:
+        path: /var/ossec/etc/ossec.conf
+        regexp: '^\s*</client_buffer>'
+        line: '    </client_buffer>'
+        insertafter: '^\s*<events_per_second>1000</events_per_second>$'
+        state: present
+      notify: Restart Wazuh Agent
+
+  handlers:
+    - name: Restart Wazuh Agent
+      ansible.builtin.service:
+        name: wazuh-agent
+        state: restarted

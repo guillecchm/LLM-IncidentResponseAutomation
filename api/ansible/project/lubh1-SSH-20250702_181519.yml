@@ -1,0 +1,22 @@
+- name: Mitigate SSH Brute Force on lubh1
+  hosts: lubh1
+  become: yes
+  tasks:
+    - name: Block attacker IP (192.168.1.4) for SSH on lubh1
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        destination_port: 22
+        source: 192.168.1.4
+        jump: DROP
+        state: present
+        comment: "Blocked SSH from 192.168.1.4 due to brute force attack"
+
+- name: Prevent future SSH attacks from lubh3 (attacker) to other subnets via router
+  hosts: router1
+  connection: network_cli
+  tasks:
+    - name: Add firewall rule to block SSH from 192.168.1.4 to non-local subnets
+      community.routeros.command:
+        commands:
+          - "/ip firewall filter add chain=forward src-address=192.168.1.4 dst-address=!192.168.1.0/24 protocol=tcp dst-port=22 action=drop comment=\"Block SSH from 192.168.1.4 to other subnets after brute force\""

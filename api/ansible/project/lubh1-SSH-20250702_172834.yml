@@ -1,0 +1,14 @@
+- name: Mitigate SSH Brute Force Attack
+  hosts: lubh1
+  become: yes
+  tasks:
+    - name: Block attacker IP 192.168.1.4 from SSH access
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        destination_port: 22
+        source: 192.168.1.4
+        jump: DROP
+        state: present
+    - name: Save iptables rules for persistence
+      ansible.builtin.command: netfilter-persistent save

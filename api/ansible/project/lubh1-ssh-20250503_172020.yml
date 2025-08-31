@@ -1,0 +1,38 @@
+---
+- name: SSH Brute Force Mitigation
+  hosts: lubh1
+  become: true
+  tasks:
+    - name: Get current IPtables rules
+      command: iptables -S
+      register: iptables_rules
+
+    - name: Block the offending IP address (192.168.56.1)
+      iptables:
+        chain: INPUT
+        source: 192.168.56.1
+        jump: DROP
+        comment: "Blocked IP due to SSH brute force attempt"
+      when: "' -A INPUT -s 192.168.56.1 -j DROP' not in iptables_rules.stdout"
+
+    - name: Update authorized_users file
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^AllowUsers'
+        line: 'AllowUsers local_user' # Replace local_user for the real user
+        state: present
+      register: sshd_config_changed
+
+    - name: Ensure AllowUsers is present in sshd_config
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        line: 'AllowUsers local_user' # Replace local_user for the real user
+        state: present
+        insertafter: EOF
+      when: sshd_config_changed.rc != 0 and "'AllowUsers' not in lookup('file', '/etc/ssh/sshd_config')"
+
+    - name: Restart SSH service
+      service:
+        name: sshd
+        state: restarted
+      when: sshd_config_changed is defined and sshd_config_changed.changed

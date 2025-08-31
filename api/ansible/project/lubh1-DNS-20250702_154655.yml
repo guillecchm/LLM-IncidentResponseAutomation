@@ -1,0 +1,20 @@
+---
+- hosts: lubh1
+  gather_facts: false
+  tasks:
+    - name: Block DNS traffic to external DNS server (192.168.1.1) on the host
+      ansible.builtin.iptables:
+        chain: OUTPUT
+        protocol: udp
+        destination: 192.168.1.1
+        dport: 53
+        jump: DROP
+        comment: "Mitigate DNS exfiltration attempt"
+
+- hosts: Mikrotik01
+  gather_facts: false
+  tasks:
+    - name: Block DNS traffic to external DNS server (192.168.1.1) on the gateway
+      community.routeros.routeros_command:
+        commands:
+          - /ip firewall filter add chain=forward dst-address=192.168.1.1 protocol=udp dst-port=53 action=drop comment="Mitigate DNS exfiltration attempt from office LAN"

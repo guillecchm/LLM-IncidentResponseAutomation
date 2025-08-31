@@ -1,0 +1,33 @@
+---
+- hosts: lubh3
+  gather_facts: false
+  tasks:
+    - name: Block the IP address using iptables
+      become: true
+      iptables:
+        chain: INPUT
+        source: 192.168.1.4
+        jump: DROP
+        comment: "Blocked IP due to SSH brute force attack"
+        state: present
+        protocol: tcp
+        destination_port: 22
+    - name: Block the IP address using iptables for all protocols
+      become: true
+      iptables:
+        chain: INPUT
+        source: 192.168.1.4
+        jump: DROP
+        comment: "Blocked IP due to SSH brute force attack"
+        state: present
+- hosts: Mikrotik01
+  gather_facts: false
+  tasks:
+    - name: Add IP address to address list
+      community.routeros.routeros_command:
+        commands:
+          - /ip/firewall/address-list/add address=192.168.1.4 list=ssh_block_list comment="Added by Ansible due to SSH brute force"
+    - name: Create firewall rule to drop traffic from the address list
+      community.routeros.routeros_command:
+        commands:
+          - /ip/firewall/filter/add chain=forward src-address-list=ssh_block_list action=drop comment="Drop SSH brute force attempts"

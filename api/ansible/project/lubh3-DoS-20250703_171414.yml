@@ -1,0 +1,34 @@
+---
+- name: Mitigate Wazuh agent buffer flooding
+  hosts: lubh3
+  become: true
+  tasks:
+    - name: Ensure client_buffer disabled is set to no
+      ansible.builtin.xml:
+        path: /var/ossec/etc/ossec.conf
+        xpath: /ossec_config/client_buffer/disabled
+        value: 'no'
+        state: present
+      notify: Restart wazuh-agent
+
+    - name: Set log_size for client_buffer to 262144 bytes
+      ansible.builtin.xml:
+        path: /var/ossec/etc/ossec.conf
+        xpath: /ossec_config/client_buffer/log_size
+        value: '262144'
+        state: present
+      notify: Restart wazuh-agent
+
+    - name: Set events_per_second for client_buffer to 500
+      ansible.builtin.xml:
+        path: /var/ossec/etc/ossec.conf
+        xpath: /ossec_config/client_buffer/events_per_second
+        value: '500'
+        state: present
+      notify: Restart wazuh-agent
+
+  handlers:
+    - name: Restart wazuh-agent
+      ansible.builtin.service:
+        name: wazuh-agent
+        state: restarted

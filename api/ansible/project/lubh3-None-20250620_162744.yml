@@ -1,0 +1,32 @@
+---
+- name: Mitigate potential SSH scan from lubh3
+  hosts: lubh3
+  gather_facts: false
+  tasks:
+    - name: Block the destination IP on the host firewall
+      become: true
+      community.general.iptables:
+        chain: INPUT
+        source: "{{ ansible_default_ipv4.address }}"
+        destination: 192.168.1.2
+        protocol: tcp
+        destination_port: 22
+        jump: DROP
+        comment: "Blocked SSH scan attempt to 192.168.1.2"
+        state: present
+
+- name: Mitigate potential SSH scan by blocking source IP on gateway
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Block source IP on Mikrotik router
+      community.routeros.routeros_command:
+        commands:
+          - /ip/firewall/filter/add chain=forward src-address=192.168.1.4 dst-address=192.168.1.2 protocol=tcp dst-port=22 action=drop comment="Blocked SSH scan attempt from 192.168.1.4"
+      vars:
+        ansible_network_os: routeros
+        ansible_connection: network_cli
+        ansible_host: 192.168.0.1
+        ansible_user: admin
+        ansible_password: password

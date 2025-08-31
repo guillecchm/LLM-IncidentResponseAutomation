@@ -1,0 +1,37 @@
+---
+- name: Mitigate SSH brute force attack
+  hosts: lubh1
+  become: true
+  tasks:
+    - name: Block the IP address of the attacker using iptables
+      ansible.builtin.iptables:
+        chain: INPUT
+        source: 192.168.1.4
+        protocol: tcp
+        destination_port: 22
+        jump: DROP
+        comment: "Block SSH brute force attacker"
+        state: present
+        direction: INPUT
+        table: filter
+        insert: true
+        out_interface: "{{ ansible_default_ipv4.interface }}"
+        in_interface: "{{ ansible_default_ipv4.interface }}"
+      become: true
+      ignore_errors: true
+      register: iptables_result
+
+    - name: Save iptables rules
+      ansible.builtin.command: iptables-save
+      become: true
+      when: iptables_result is changed
+
+- name: Mitigate SSH brute force attack in router
+  hosts: router1
+  connection: network_cli
+  gather_facts: false
+  tasks:
+    - name: Add firewall rule to drop traffic from attacker IP to destination network
+      community.routeros.command:
+        commands:
+          - "/ip firewall filter add chain=forward src-address=192.168.1.4 dst-address=192.168.1.0/24 protocol=tcp dst-port=22 action=drop comment=\"Block SSH brute force attacker from attacking subnet\""

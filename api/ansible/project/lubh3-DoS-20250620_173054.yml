@@ -1,0 +1,23 @@
+---
+- name: Mitigate Agent Flooding
+  hosts: lubh3
+  become: true
+  tasks:
+    - name: Stop and disable Wazuh agent
+      systemd:
+        name: wazuh-agent
+        state: stopped
+        enabled: no
+      ignore_errors: true
+
+- name: Mitigate DoS attack by blocking agent IP
+  hosts: ansible-server
+  tasks:
+    - name: Block IP address of the flooded agent on the firewall
+      community.general.iptables:
+        chain: INPUT
+        source: "192.168.1.4"
+        jump: DROP
+        comment: "Blocked due to Wazuh agent flooding"
+        state: present
+        persistent: true

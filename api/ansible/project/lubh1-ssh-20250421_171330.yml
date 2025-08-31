@@ -1,0 +1,34 @@
+---
+- name: SSH Brute Force Mitigation
+  hosts: lubh1
+  gather_facts: true
+  become: true
+  tasks:
+    - name: Check if IP is already blocked
+      shell: "iptables -C INPUT -s 192.168.56.1 -j DROP"
+      register: ip_blocked
+      ignore_errors: true
+
+    - name: Block the malicious IP address
+      iptables:
+        chain: INPUT
+        source: 192.168.56.1
+        jump: DROP
+        comment: "Blocked SSH brute force attacker"
+      when: ip_blocked.rc != 0
+
+    - name: Get current SSH failed attempts
+      shell: "grep 'Invalid user' /var/log/auth.log | awk '{print $11}' | sort | uniq -c | sort -nr"
+      register: failed_attempts
+      changed_when: false
+
+    - name: Display failed attempts
+      debug:
+        var: failed_attempts.stdout_lines
+
+    - name: Add attacker IP to the /etc/hosts.deny file
+      lineinfile:
+        path: /etc/hosts.deny
+        line: "sshd: 192.168.56.1"
+        create: true
+      when: "'sshd: 192.168.56.1' not in lookup('file', '/etc/hosts.deny')"

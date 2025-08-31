@@ -1,0 +1,27 @@
+---
+- hosts: lubh1
+  become: true
+  tasks:
+    - name: Block the offending IP address using iptables
+      ansible.builtin.iptables:
+        chain: INPUT
+        source: 192.168.1.4
+        protocol: tcp
+        destination_port: 22
+        jump: DROP
+        comment: "Blocked IP due to SSH brute force attempt"
+        state: present
+        
+- hosts: router1
+  connection: network_cli
+  gather_facts: false
+  tasks:
+    - name: Add address list entry for the offending IP
+      community.routeros.command:
+        commands:
+          - /ip/firewall/address-list/add address=192.168.1.4 list=ssh_block comment="Blocked IP due to SSH brute force attempt"
+
+    - name: Add firewall rule to drop SSH traffic from the address list
+      community.routeros.command:
+        commands:
+          - /ip/firewall/filter/add chain=forward src-address-list=ssh_block protocol=tcp dst-port=22 action=drop comment="Drop SSH traffic from blocked IPs"

@@ -1,0 +1,36 @@
+---
+- name: Mitigate potential SSH scan
+  hosts: lubh3
+  gather_facts: false
+  tasks:
+    - name: Block the destination IP address using iptables
+      become: true
+      ansible.builtin.iptables:
+        chain: INPUT
+        source: 192.168.1.2
+        protocol: tcp
+        destination_port: 22
+        jump: DROP
+        comment: "Blocked SSH scan from 192.168.1.2"
+        state: present
+        
+    - name: Save iptables rules
+      become: true
+      ansible.builtin.command:
+        cmd: "iptables-save"
+      changed_when: false
+
+- name: Mitigate potential SSH scan on Router
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Add destination IP address to address list
+      community.routeros.routeros_command:
+        commands:
+          - "/ip/firewall/address-list/add address=192.168.1.2 list=ssh_blacklist comment=\"Blocked SSH scan from 192.168.1.2\""
+
+    - name: Create firewall rule to drop connections from the address list
+      community.routeros.routeros_command:
+        commands:
+          - "/ip/firewall/filter/add chain=forward src-address-list=ssh_blacklist protocol=tcp dst-port=22 action=drop comment=\"Drop SSH scans from blacklist\""

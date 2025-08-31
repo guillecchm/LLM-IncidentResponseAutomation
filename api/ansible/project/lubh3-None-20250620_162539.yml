@@ -1,0 +1,28 @@
+---
+- hosts: lubh3
+  become: true
+  tasks:
+    - name: Block SSH connection attempts from the source IP
+      community.general.iptables:
+        chain: INPUT
+        source: 192.168.1.4
+        destination_port: 22
+        protocol: tcp
+        jump: DROP
+        comment: "Blocking potential SSH scan from 192.168.1.4"
+        state: present
+
+- hosts: Mikrotik01
+  connection: network_cli
+  gather_facts: false
+
+  tasks:
+    - name: Add firewall rule to block SSH scans
+      routeros_firewall:
+        command: add
+        chain: forward
+        src_address: 192.168.1.4
+        protocol: tcp
+        dst_port: 22
+        action: drop
+        comment: "Blocking potential SSH scan from 192.168.1.4"

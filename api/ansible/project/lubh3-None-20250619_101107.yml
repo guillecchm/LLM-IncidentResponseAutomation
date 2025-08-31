@@ -1,0 +1,29 @@
+---
+- name: Mitigate Potential SSH Scan from lubh3
+  hosts: lubh3
+  become: true
+  tasks:
+    - name: Block the IP address 192.168.1.4 using iptables
+      iptables:
+        chain: INPUT
+        source: 192.168.1.4
+        protocol: tcp
+        destination_port: 22
+        jump: DROP
+        comment: "Blocked SSH scan from lubh3"
+        state: present
+
+- name: Block source IP on destination's firewall
+  hosts: lubh1
+  become: true
+  tasks:
+    - name: Block the IP address 192.168.1.4 using iptables
+      iptables:
+        chain: INPUT
+        source: 192.168.1.4
+        protocol: tcp
+        destination_port: 22
+        jump: DROP
+        comment: "Blocked SSH scan from lubh3"
+        state: present
+---

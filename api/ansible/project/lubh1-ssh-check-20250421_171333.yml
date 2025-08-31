@@ -1,0 +1,31 @@
+```yaml
+---
+- name: Verify SSH Brute Force Mitigation
+  hosts: lubh1
+  gather_facts: true
+  become: true
+  tasks:
+    - name: Check if IP is blocked by iptables
+      iptables:
+        chain: INPUT
+        source: 192.168.56.1
+        jump: DROP
+        comment: "Blocked SSH brute force attacker"
+      check_mode: true
+      register: iptables_check
+
+    - name: Report iptables check result
+      debug:
+        msg: "IP 192.168.56.1 is blocked by iptables: {{ iptables_check.check_mode }}"
+
+    - name: Check if IP is in /etc/hosts.deny
+      command: grep "sshd: 192.168.56.1" /etc/hosts.deny
+      register: hosts_deny_check
+      ignore_errors: true
+      changed_when: false
+
+    - name: Report /etc/hosts.deny check result
+      debug:
+        msg: "/etc/hosts.deny contains sshd: 192.168.56.1: {{ hosts_deny_check.rc == 0 }}"
+      when: hosts_deny_check.rc != 0 or hosts_deny_check.rc == 0
+```

@@ -1,0 +1,90 @@
+---
+- hosts: lubh1
+  become: true
+  tasks:
+    - name: Check if malicious IP address is blocked by iptables
+      iptables:
+        chain: INPUT
+        source: 192.168.56.1
+        protocol: tcp
+        destination_port: 22
+        jump: DROP
+        comment: "Blocked brute force SSH attack from 192.168.56.1"
+        state: present
+      register: iptables_check
+      check_mode: true
+
+    - name: Report iptables rule status
+      debug:
+        msg: "Iptables rule check: PRESENT"
+      when: iptables_check.matches > 0
+
+    - name: Report iptables rule status
+      debug:
+        msg: "Iptables rule check: ABSENT - Rule may not be applied correctly"
+      when: iptables_check.matches == 0
+
+    - name: Check if iptables rules file exists
+      stat:
+        path: /etc/iptables/rules.v4
+      register: iptables_rules_file
+
+    - name: Report iptables rules file status
+      debug:
+        msg: "Iptables rules file exists: YES"
+      when: iptables_rules_file.stat.exists
+
+    - name: Report iptables rules file status
+      debug:
+        msg: "Iptables rules file exists: NO - File may not have been created correctly"
+      when: not iptables_rules_file.stat.exists
+
+    - name: Check if iptables rules are persisted in /etc/network/interfaces
+      slurp:
+        path: /etc/network/interfaces
+      register: network_interfaces_content
+
+    - name: Report iptables persistence status
+      debug:
+        msg: "Iptables persistence check: PRESENT"
+      when: network_interfaces_content.content | b64decode is search('post-up iptables-restore < /etc/iptables/rules.v4')
+
+    - name: Report iptables persistence status
+      debug:
+        msg: "Iptables persistence check: ABSENT - Rule may not be persisted across reboots"
+      when: not network_interfaces_content.content | b64decode is search('post-up iptables-restore < /etc/iptables/rules.v4')
+
+    - name: Check if iptables-persistent package is installed
+      apt:
+        name: iptables-persistent
+        state: present
+      register: iptables_persistent_check
+      check_mode: true
+
+    - name: Report iptables-persistent package status
+      debug:
+        msg: "iptables-persistent package check: INSTALLED"
+      when: ansible_distribution == "Ubuntu" and iptables_persistent_check.changed == false
+
+    - name: Report iptables-persistent package status
+      debug:
+        msg: "iptables-persistent package check: NOT INSTALLED - Package may not have been installed correctly"
+      when: ansible_distribution == "Ubuntu" and iptables_persistent_check.changed == true
+
+    - name: Check if netfilter-persistent service is enabled and running (Ubuntu)
+      systemd:
+        name: netfilter-persistent
+        state: started
+        enabled: true
+      register: netfilter_persistent_status
+      check_mode: true
+
+    - name: Report netfilter-persistent service status
+      debug:
+        msg: "netfilter-persistent service check: RUNNING and ENABLED"
+      when: ansible_distribution == "Ubuntu" and netfilter_persistent_status.status.ActiveState == "active" and netfilter_persistent_status.status.Enabled == true
+
+    - name: Report netfilter-persistent service status
+      debug:
+        msg: "netfilter-persistent service check: NOT RUNNING or NOT ENABLED - Service may not have been started or enabled correctly"
+      when: ansible_distribution == "Ubuntu" and (netfilter_persistent_status.status.ActiveState != "active" or netfilter_persistent_status.status.Enabled != true)

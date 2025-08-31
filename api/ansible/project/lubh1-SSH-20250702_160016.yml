@@ -1,0 +1,17 @@
+---
+- name: Mitigate SSH brute-force attack
+  hosts: lubh3
+  gather_facts: false
+  tasks:
+    - name: Block malicious IP address
+      community.general.iptables:
+        chain: INPUT
+        source: 192.168.1.4
+        protocol: tcp
+        destination_port: 22
+        jump: DROP
+        comment: "Blocked SSH brute-force attack from 192.168.1.4"
+        state: present
+        direction: input
+        table: filter
+      become: true

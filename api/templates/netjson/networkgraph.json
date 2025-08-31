@@ -1,0 +1,219 @@
+{
+    "type": "NetworkGraph",
+    "protocol": "static",
+    "version": null,
+    "revision": null,
+    "metric": null,
+    "router_id": "router1",
+    "topology_id": "topology1",
+    "label": "Network topology",
+    "nodes": [
+        {
+            "id": "webserver",
+            "label": "servers",
+            "local_addresses": [
+                "172.12.0.2"
+            ],
+            "properties": {
+                "hostname": "webserver",
+                "description": "Internal web server of the organization",
+                "applications": {
+                    "apache2": {
+                        "version": "2.4.58",
+                        "endpoint": "http://172.12.0.2"
+                    }
+                },
+                "lan": "servers",
+                "os": {
+                    "name": "Ubuntu",
+                    "version": "24.04.2 LTS (Noble Numbat)",
+                    "gui": false
+                },
+                "firewall": "iptables",
+                "access": {
+                    "ssh": true,
+                    "ansible": {
+                        "enabled": true,
+                        "user": "ansible"
+                    }
+                }
+            }
+        },
+        {
+            "id": "lubh1",
+            "label": "office",
+            "local_addresses": [
+                "192.168.1.2"
+            ],
+            "properties": {
+                "hostname": "lubh1",
+                "description": "User workstation in the organization",
+                "applications": null,
+                "lan": "office",
+                "os": {
+                    "name": "Ubuntu",
+                    "version": "24.04.2 LTS (Noble Numbat)",
+                    "gui": true
+                },
+                "firewall": "iptables",
+                "access": {
+                    "ssh": true,
+                    "ansible": {
+                        "enabled": true,
+                        "user": "ansible"
+                    }
+                }
+            }
+        },
+        {
+            "id": "lubh2",
+            "label": "office",
+            "local_addresses": [
+                "192.168.1.3"
+            ],
+            "properties": {
+                "hostname": "lubh2",
+                "description": "User workstation in the organization",
+                "applications": null,
+                "lan": "office",
+                "os": {
+                    "name": "Ubuntu",
+                    "version": "24.04.2 LTS (Noble Numbat)",
+                    "gui": true
+                },
+                "firewall": "iptables",
+                "access": {
+                    "ssh": true,
+                    "ansible": {
+                        "enabled": true,
+                        "user": "ansible"
+                    }
+                }
+            }
+        },
+        {
+            "id": "lubh3",
+            "label": "office",
+            "local_addresses": [
+                "192.168.1.4"
+            ],
+            "properties": {
+                "hostname": "lubh3",
+                "description": "User workstation in the organization",
+                "applications": null,
+                "lan": "office",
+                "os": {
+                    "name": "Ubuntu",
+                    "version": "24.04.2 LTS (Noble Numbat)",
+                    "gui": true
+                },
+                "firewall": "iptables",
+                "access": {
+                    "ssh": true,
+                    "ansible": {
+                        "enabled": true,
+                        "user": "ansible"
+                    }
+                }
+            }
+        },
+        {
+            "id": "wazuh-server",
+            "label": "admin",
+            "local_addresses": [
+                "192.168.0.2"
+            ],
+            "properties": {
+                "hostname": "wazuh-server",
+                "description": "Host running Wazuh Central. It's the SIEM of the network. Detects anomalies in the network and sends an http request to the api running on the ansible server to mitigate the alert.",
+                "applications": {
+                    "wazuh": {
+                        "version": "4.11.1",
+                        "endpoint": "http://192.168.0.2:14443"
+                    }
+                },
+                "lan": "admin",
+                "os": {
+                    "name": "Ubuntu",
+                    "version": "24.04.2 LTS (Noble Numbat)",
+                    "gui": false
+                },
+                "firewall": "iptables",
+                "access": {
+                    "ssh": true,
+                    "ansible": {
+                        "enabled": false,
+                        "user": null
+                    }
+                }
+            }
+        },
+        {
+            "id": "ansible-server",
+            "label": "admin",
+            "local_addresses": [
+                "192.168.0.3"
+            ],
+            "properties": {
+                "hostname": "ansible-server",
+                "description": "Host running alert api and ansible-server. Its purpose is to receive alerts from the SIEM, process them, create an input for an LLM and apply the script that the LLM provides in response on the corresponding host via ansible.",
+                "applications": {
+                    "flask": {
+                        "version": "3.1.0",
+                        "endpoint": "http://192.168.0.3:13080"
+                    },
+                    "ansible": {
+                        "core_version": "2.17.9",
+                        "python_version": "3.12.3"
+                    }
+                },
+                "lan": "admin",
+                "os": {
+                    "name": "Ubuntu",
+                    "version": "24.04.2 LTS (Noble Numbat)",
+                    "gui": false
+                },
+                "firewall": "iptables",
+                "access": {
+                    "ssh": true,
+                    "ansible": {
+                        "enabled": false,
+                        "user": null
+                    }
+                }
+            }
+        }
+    ],
+    "links": [
+        {
+            "source": "172.12.0.2",
+            "target": "172.12.0.1",
+            "cost": 0
+        },
+        {
+            "source": "192.168.1.2",
+            "target": "192.168.1.1",
+            "cost": 0
+        },
+        {
+            "source": "192.168.1.3",
+            "target": "192.168.1.1",
+            "cost": 0
+        },
+        {
+            "source": "192.168.1.4",
+            "target": "192.168.1.1",
+            "cost": 0
+        },
+        {
+            "source": "192.168.0.2",
+            "target": "192.168.0.1",
+            "cost": 0
+        },
+        {
+            "source": "192.168.0.3",
+            "target": "192.168.0.1",
+            "cost": 0
+        }
+    ]
+}

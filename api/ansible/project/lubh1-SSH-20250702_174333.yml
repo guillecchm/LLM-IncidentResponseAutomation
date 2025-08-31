@@ -1,0 +1,41 @@
+- name: Mitigate SSH Brute Force Attack
+  hosts: lubh1 # Target the host that generated the alert (lubh1, agent.id: 001, agent.ip: 192.168.1.2)
+  become: yes
+  vars:
+    attacker_ip: "192.168.56.1" # data.srcip from the alert
+    target_user: "guille" # data.dstuser from the alert
+
+  tasks:
+    - name: Block attacker IP {{ attacker_ip }} for SSH on lubh1 using iptables
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        destination_port: 22
+        source: "{{ attacker_ip }}"
+        jump: DROP
+        state: present
+
+    - name: Disable password authentication for SSH to prevent future brute force attempts
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^\s*#?\s*PasswordAuthentication\s+'
+        line: 'PasswordAuthentication no'
+        state: present
+        backrefs: yes # Required if using regexp to match and replace, rather than just insert
+      notify: Restart sshd
+
+    - name: Explicitly deny the targeted user '{{ target_user }}' SSH access
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^\s*#?\s*DenyUsers\s+{{ target_user }}\s*$'
+        line: 'DenyUsers {{ target_user }}'
+        state: present
+        insertafter: '^PasswordAuthentication no' # Place after the password auth setting
+        backrefs: yes
+      notify: Restart sshd
+
+  handlers:
+    - name: Restart sshd
+      ansible.builtin.service:
+        name: sshd
+        state: restarted

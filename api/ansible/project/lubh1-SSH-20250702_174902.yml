@@ -1,0 +1,27 @@
+- name: Mitigate SSH brute force on lubh1
+  hosts: lubh1
+  become: true
+  tasks:
+    - name: Block attacker IP 192.168.1.4 for SSH on lubh1
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        destination_port: 22
+        source: 192.168.1.4
+        jump: DROP
+        state: present
+        comment: "Blocked SSH brute force from 192.168.1.4 to lubh1"
+
+- name: Prevent future SSH attacks from attacker source on router
+  hosts: router1
+  tasks:
+    - name: Ensure RouterOS rule is removed before adding to prevent duplicates
+      community.routeros.command:
+        commands:
+          - '/ip firewall filter remove [find comment="Block outbound SSH from 192.168.1.4"]'
+      ignore_errors: true
+
+    - name: Add RouterOS rule to block outbound SSH from 192.168.1.4 to other subnets
+      community.routeros.command:
+        commands:
+          - '/ip firewall filter add chain=forward action=drop protocol=tcp dst-port=22 src-address=192.168.1.4 dst-address=!192.168.1.0/24 comment="Block outbound SSH from 192.168.1.4"'

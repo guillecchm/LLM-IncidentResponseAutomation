@@ -1,0 +1,27 @@
+---
+- name: Mitigate DNS Exfiltration Attack
+  hosts: lubh1
+  gather_facts: false
+  tasks:
+    - name: Block DNS queries for long FQDNs using iptables
+      become: true
+      iptables:
+        chain: OUTPUT
+        protocol: udp
+        destination_port: 53
+        match: string
+        string: "hola.que.tal.como.estas.que.como.what.que.as.aaaa"
+        algo: bm
+        jump: DROP
+        comment: "Block DNS exfiltration attempt (long FQDN)"
+
+- name: Mitigate DNS Exfiltration Attack in Mikrotik Router
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Block DNS queries for long FQDNs using firewall filter
+      routeros_command:
+        commands:
+          - /ip/firewall/filter/add chain=forward protocol=udp dst-port=53 content="hola.que.tal.como.estas.que.como.what.que.as.aaaa" action=drop comment="Block DNS exfiltration attempt (long FQDN)"
+      delegate_to: 192.168.1.1
+      run_once: true

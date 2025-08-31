@@ -1,0 +1,33 @@
+---
+- hosts: lubh3
+  become: true
+  tasks:
+    - name: Block malicious IP address using iptables
+      iptables:
+        chain: INPUT
+        source: 192.168.1.4
+        jump: DROP
+        comment: "Blocked SSH brute-force attack from 192.168.1.4"
+        state: present
+        protocol: tcp
+        destination_port: 22
+    - name: Log the blocked IP
+      shell: "echo 'Blocked IP 192.168.1.4 due to SSH brute-force' >> /var/log/blocked_ips.log"
+      args:
+        executable: /bin/bash
+    - name: Flush iptables
+      iptables:
+        flush: true
+        table: filter
+- hosts: Mikrotik
+  connection: network_cli
+  gather_facts: false
+  tasks:
+    - name: Add IP address to address list
+      routeros_command:
+        commands:
+          - /ip/firewall/address-list/add address=192.168.1.4 list=ssh_blacklist comment="SSH brute-force attacker"
+    - name: Apply a Firewall Rule
+      routeros_command:
+        commands:
+          - /ip/firewall/filter/add chain=forward src-address-list=ssh_blacklist action=drop comment="Drop SSH brute-force traffic" log=yes

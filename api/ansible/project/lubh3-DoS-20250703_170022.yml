@@ -1,0 +1,12 @@
+```yaml
+---
+- name: Mitigate Wazuh Agent Flooding
+  hosts: lubh3
+  become: true
+  tasks:
+    - name: Restart Wazuh agent service to clear flooded buffer and re-evaluate configuration
+      ansible.builtin.service:
+        name: wazuh-agent
+        state: restarted
+        enabled: true
+```

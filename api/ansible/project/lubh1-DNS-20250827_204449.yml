@@ -1,0 +1,36 @@
+---
+- name: Mitigate DNS Exfiltration on compromised host
+  hosts: lubh1
+  become: true
+  tasks:
+    - name: Block outbound DNS to non-internal servers
+      ansible.builtin.iptables:
+        chain: OUTPUT
+        protocol: udp
+        destination_port: 53
+        destination: "!192.168.1.1"
+        jump: DROP
+        comment: "Block outbound DNS to external servers for DNS exfiltration prevention"
+        state: present
+
+    - name: Add malicious domain to /etc/hosts
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        line: "127.0.0.1 malicious.server"
+        insertafter: EOF
+        state: present
+        create: true
+        mode: '0644'
+        backup: true
+        comment: "Blocked malicious domain due to DNS exfiltration attack"
+
+- name: Configure router to block malicious DNS resolution
+  hosts: router1
+  connection: network_cli
+  gather_facts: false
+  tasks:
+    - name: Ensure malicious domain is blackholed in router DNS static entries
+      community.routeros.command:
+        commands:
+          - /ip dns static remove [find where name="malicious.server"]
+          - /ip dns static add name="malicious.server" address="0.0.0.0" comment="Block malicious DNS exfiltration domain"

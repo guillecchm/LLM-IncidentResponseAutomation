@@ -1,0 +1,33 @@
+---
+- hosts: lubh3
+  gather_facts: false
+  tasks:
+    - name: Block SSH scanning IP address using iptables
+      become: true
+      iptables:
+        chain: INPUT
+        source: 192.168.1.4
+        protocol: tcp
+        destination_port: 22
+        jump: DROP
+        comment: "Blocked SSH scan from Suricata alert"
+        state: present
+    - name: Log the blocked IP
+      become: true
+      lineinfile:
+        path: /var/log/ssh_scan_block.log
+        line: "IP 192.168.1.4 blocked due to SSH scan attempt on {{ lookup('pipe', 'date +%Y-%m-%d_%H:%M:%S') }}"
+        create: yes
+
+- hosts: Mikrotik
+  connection: network_cli
+  gather_facts: false
+  tasks:
+    - name: Add IP address to address list on Mikrotik
+      community.routeros.routeros_command:
+        commands:
+          - /ip/firewall/address-list/add address=192.168.1.4 list=ssh_scan_blacklist comment="Added by Ansible due to SSH scan alert"
+    - name: Add firewall rule to drop connections from the address list
+      community.routeros.routeros_command:
+        commands:
+          - /ip/firewall/filter/add chain=forward src-address-list=ssh_scan_blacklist protocol=tcp dst-port=22 action=drop comment="Drop SSH connections from blacklisted IPs"

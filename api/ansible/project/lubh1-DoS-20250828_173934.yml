@@ -1,0 +1,36 @@
+---
+- name: Mitigate DoS attack and prevent agent flooding on lubh1
+  hosts: lubh1
+  become: true
+  tasks:
+    - name: Allow limited new TCP connections to mitigate DoS
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        ctstate: NEW
+        match: limit
+        limit: "50/minute"
+        limit_burst: "20"
+        jump: ACCEPT
+        comment: "Allow limited new TCP connections to mitigate DoS on lubh1"
+        rule_num: 1
+
+    - name: Drop excessive new TCP connections to mitigate DoS
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        ctstate: NEW
+        jump: DROP
+        comment: "Drop excessive new TCP connections to mitigate DoS on lubh1"
+        rule_num: 2
+
+- name: Router configuration to limit new connections to lubh1
+  hosts: router1
+  connection: network_cli
+  gather_facts: false
+  tasks:
+    - name: Add firewall rules to limit and drop excessive new TCP connections to lubh1 on router
+      community.routeros.command:
+        commands:
+          - /ip firewall filter add chain=forward protocol=tcp connection-state=new dst-address=192.168.1.2 limit=50,20:dst-address action=accept comment="Limit new TCP connections to lubh1"
+          - /ip firewall filter add chain=forward protocol=tcp connection-state=new dst-address=192.168.1.2 action=drop comment="Drop excessive new TCP connections to lubh1"

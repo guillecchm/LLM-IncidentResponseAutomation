@@ -1,0 +1,22 @@
+- name: Block SSH brute-force attacker on lubh1
+  hosts: lubh1
+  become: yes
+  tasks:
+    - name: Block incoming SSH from attacker IP
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        destination_port: 22
+        source: 192.168.1.4
+        jump: DROP
+        state: present
+
+- name: Block SSH from attacker to other internal subnets at router
+  hosts: router1
+  become: yes
+  tasks:
+    - name: Ensure SSH traffic from 192.168.1.4 to other internal subnets is dropped
+      community.routeros.command:
+        commands:
+          - /ip firewall filter remove [find comment="Block SSH from 192.168.1.4 to other internal subnets"]
+          - /ip firewall filter add chain=forward src-address=192.168.1.4 dst-address=192.168.0.0/24,192.168.56.0/24 protocol=tcp dst-port=22 action=drop comment="Block SSH from 192.168.1.4 to other internal subnets"

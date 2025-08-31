@@ -1,0 +1,30 @@
+---
+- hosts: lubh3
+  become: true
+  tasks:
+    - name: Block malicious IP address using iptables
+      iptables:
+        chain: INPUT
+        source: 192.168.1.4
+        jump: DROP
+        comment: "Blocked IP due to SSH brute force attack detected by Wazuh"
+        state: present
+        protocol: tcp
+        destination_port: 22
+    - name: Log the blocked IP address
+      lineinfile:
+        path: /var/log/blocked_ips.log
+        line: "Blocked IP 192.168.1.4 on {{ ansible_date_time.iso8601 }} due to SSH brute force on port 22."
+        create: yes
+- hosts: Mikrotik01
+  connection: network_cli
+  gather_facts: false
+  tasks:
+    - name: Add IP address to firewall address list
+      routeros_command:
+        commands:
+          - /ip/firewall/address-list/add address=192.168.1.4 list=ssh_brute_block comment="Blocked by Ansible due to Wazuh alert"
+    - name: Add firewall rule to drop connections from the address list
+      routeros_command:
+        commands:
+          - /ip/firewall/filter/add chain=forward src-address-list=ssh_brute_block action=drop comment="Drop SSH brute force attempts"

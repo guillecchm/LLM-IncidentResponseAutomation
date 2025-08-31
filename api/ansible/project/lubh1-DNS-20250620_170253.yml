@@ -1,0 +1,23 @@
+---
+- hosts: lubh1
+  become: true
+  tasks:
+    - name: Block DNS exfiltration by blocking outgoing UDP port 53 traffic to suspicious DNS server
+      ufw:
+        rule: reject
+        proto: udp
+        direction: out
+        to_port: '53'
+        to: 192.168.1.1
+        from_ip: 192.168.1.2
+      ignore_errors: true
+
+- hosts: Mikrotik01
+  connection: network_cli
+  gather_facts: false
+
+  tasks:
+    - name: Add a firewall rule to drop DNS traffic from source IP
+      routeros_command:
+        commands:
+          - /ip/firewall/filter/add chain=forward src-address=192.168.1.2 dst-port=53 protocol=udp action=drop comment="Mitigate DNS exfiltration"

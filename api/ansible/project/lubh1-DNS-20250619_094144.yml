@@ -1,0 +1,26 @@
+---
+- name: Mitigate DNS Exfiltration Attack
+  hosts: lubh1
+  become: true
+  tasks:
+    - name: Block outgoing DNS requests with excessive FQDN length using iptables
+      iptables:
+        chain: OUTPUT
+        protocol: udp
+        destination_port: 53
+        match: string
+        string: "hola.que.tal.como.estas.que.como.what.que.as.aaaa"
+        algo: bm
+        jump: DROP
+        comment: "Block DNS exfiltration attempt - FQDN too long"
+
+- name: Mitigate DNS Exfiltration Attack - Mikrotik Router
+  hosts: ansible-server
+  tasks:
+    - name: Add Mikrotik firewall rule to drop traffic with long FQDN from source IP
+      community.routeros.routeros_command:
+        host: 192.168.1.1
+        username: ansible
+        password: password
+        commands:
+          - "/ip/firewall/filter/add chain=forward src-address=192.168.1.2 protocol=udp dst-port=53 content=\"hola.que.tal.como.estas.que.como.what.que.as.aaaa\" action=drop comment=\"Block DNS exfiltration attempt - FQDN too long\""

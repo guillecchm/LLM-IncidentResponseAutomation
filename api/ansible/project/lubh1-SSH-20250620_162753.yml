@@ -1,0 +1,37 @@
+---
+- name: Mitigate SSH Brute Force Attack
+  hosts: lubh1
+  become: true
+  tasks:
+    - name: Block malicious IP address using iptables
+      iptables:
+        chain: INPUT
+        source: "{{ ansible_facts.default_ipv4.gateway }}"
+        destination: "{{ data.srcip }}"
+        protocol: tcp
+        destination_port: 22
+        jump: DROP
+        comment: "Mitigate SSH brute force attack from {{ data.srcip }}"
+        state: present
+      vars:
+        data: "{{ lookup('vars', 'data') }}"
+        agent: "{{ lookup('vars', 'agent') }}"
+    - name: Get current blocked IPs from Mikrotik
+      community.routeros.routeros_command:
+        commands: /ip/firewall/filter/print
+        host: "{{ ansible_facts.default_ipv4.gateway }}"
+        username: admin
+        password: password
+        ssh_port: 22
+      register: firewall_rules
+    - name: Add malicious IP to Mikrotik firewall filter
+      community.routeros.routeros_command:
+        commands: /ip/firewall/filter/add chain=input src-address="{{ data.srcip }}" protocol=tcp dst-port=22 action=drop comment="Mitigate SSH brute force attack from {{ data.srcip }}"
+        host: "{{ ansible_facts.default_ipv4.gateway }}"
+        username: admin
+        password: password
+        ssh_port: 22
+      when: "'src-address={{ data.srcip }}' not in firewall_rules.stdout[0]"
+      vars:
+        data: "{{ lookup('vars', 'data') }}"
+        agent: "{{ lookup('vars', 'agent') }}"

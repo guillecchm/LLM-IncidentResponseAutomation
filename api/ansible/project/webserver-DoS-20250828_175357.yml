@@ -1,0 +1,34 @@
+- name: Respond to DoS alert by mitigating agent flooding and rate-limiting web traffic
+  hosts: webserver
+  become: true
+  tasks:
+    - name: Set Wazuh agent event queue size to 10000 in ossec.conf
+      ansible.builtin.xml:
+        path: /var/ossec/etc/ossec.conf
+        xpath: /ossec_config/client/queue_size
+        value: 10000
+        state: present
+        prettyprint: true
+      notify: Restart Wazuh Agent
+
+    - name: Rate limit new connections to common web ports (80/443) to mitigate DoS
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        destination_port: "{{ item }}"
+        match: state
+        state: NEW
+        limit: "25/minute"
+        limit_burst: "100"
+        jump: ACCEPT
+        comment: "Rate limit new connections to web services to mitigate DoS"
+      loop:
+        - 80
+        - 443
+
+  handlers:
+    - name: Restart Wazuh Agent
+      ansible.builtin.systemd:
+        name: wazuh-agent
+        state: restarted
+        enabled: true

@@ -1,0 +1,40 @@
+- name: Mitigate SSH brute-force on agent host
+  hosts: lubh1
+  become: true
+  tasks:
+    - name: Block attacker IP (192.168.1.4) for SSH on agent host (192.168.1.2)
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        destination_port: 22
+        source: 192.168.1.4
+        jump: DROP
+        state: present
+        comment: "Blocked SSH brute-force from 192.168.1.4"
+
+- name: Prevent lateral movement from attacker host via router
+  hosts: mikrotik
+  connection: community.routeros.routeros
+  gather_facts: false
+  tasks:
+    - name: Ensure SSH from attacker IP (192.168.1.4) is blocked to admin subnet 1 (192.168.0.0/24)
+      community.routeros.firewall_filter:
+        chain: forward
+        src_address: 192.168.1.4
+        dst_address: 192.168.0.0/24
+        protocol: tcp
+        dst_port: 22
+        action: drop
+        comment: "Block SSH from 192.168.1.4 to 192.168.0.0/24"
+        state: present
+
+    - name: Ensure SSH from attacker IP (192.168.1.4) is blocked to admin subnet 2 (192.168.56.0/24)
+      community.routeros.firewall_filter:
+        chain: forward
+        src_address: 192.168.1.4
+        dst_address: 192.168.56.0/24
+        protocol: tcp
+        dst_port: 22
+        action: drop
+        comment: "Block SSH from 192.168.1.4 to 192.168.56.0/24"
+        state: present

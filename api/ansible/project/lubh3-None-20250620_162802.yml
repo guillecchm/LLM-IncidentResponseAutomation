@@ -1,0 +1,46 @@
+---
+- name: Mitigate Potential SSH Scan
+  hosts: lubh3
+  gather_facts: false
+  tasks:
+    - name: Block the destination IP address using iptables
+      become: true
+      iptables:
+        chain: INPUT
+        source: "{{ ansible_default_ipv4.address }}"
+        destination: 192.168.1.2
+        protocol: tcp
+        destination_port: 22
+        jump: DROP
+        comment: "Blocked SSH scan attempt from {{ ansible_default_ipv4.address }}"
+        state: present
+        
+- name: Mitigate Potential SSH Scan at the Router
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Gather router facts
+      routeros_facts:
+        host: 192.168.1.1
+        username: admin
+        password: password
+      register: router_facts
+
+    - name: Add IP address to address list if not already present
+      routeros_command:
+        host: 192.168.1.1
+        username: admin
+        password: password
+        commands:
+          - "/ip/firewall/address-list/add list=ssh_blacklist address=192.168.1.4 comment=\"Added by Ansible due to SSH scan attempt\""
+      when: "'192.168.1.4' not in router_facts.ansible_facts.routeros_facts.ip.firewall.address_list | map(attribute='address') | list"
+
+    - name: Add firewall rule to drop traffic from the address list
+      routeros_command:
+        host: 192.168.1.1
+        username: admin
+        password: password
+        commands:
+          - "/ip/firewall/filter/add chain=forward src-address-list=ssh_blacklist protocol=tcp dst-port=22 action=drop comment=\"Drop SSH traffic from blacklisted IPs\""
+      when: "'src-address-list=ssh_blacklist' not in router_facts.ansible_facts.routeros_facts.ip.firewall.filter | map(attribute='src_address_list') | list"

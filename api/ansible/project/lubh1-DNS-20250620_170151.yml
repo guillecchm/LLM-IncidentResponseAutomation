@@ -1,0 +1,22 @@
+---
+- hosts: lubh1
+  become: true
+  tasks:
+    - name: Block DNS exfiltration attempt by blocking the offending domain
+      lineinfile:
+        path: /etc/hosts
+        line: "127.0.0.1 hola.que.tal.como.estas.que.como.what.que.as.aaaa"
+        state: present
+        create: yes
+      when:
+        - "'hola.que.tal.como.estas.que.como.what.que.as.aaaa' not in lookup('file', '/etc/hosts') | default('')"
+
+- hosts: Mikrotik01
+  connection: network_cli
+  gather_facts: false
+
+  tasks:
+    - name: Add a firewall rule to drop DNS traffic from the offending host to the DNS server
+      routeros_command:
+        commands:
+          - /ip firewall filter add chain=forward src-address=192.168.1.2 dst-address=192.168.1.1 protocol=udp dst-port=53 action=drop comment="Blocked DNS Exfiltration Attempt from lubh1"

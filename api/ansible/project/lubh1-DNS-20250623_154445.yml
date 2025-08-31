@@ -1,0 +1,24 @@
+---
+- hosts: lubh1
+  gather_facts: false
+  tasks:
+    - name: Block DNS exfiltration attempts by blocking DNS requests for long FQDNs
+      iptables:
+        chain: OUTPUT
+        protocol: udp
+        destination_port: 53
+        match: string
+        string: "hola.que.tal.como.estas.que.como.what.que.as.aaaa"
+        algo: bm
+        jump: DROP
+        comment: "Block DNS exfiltration attempts - Long FQDN"
+        state: present
+
+- hosts: Mikrotik01
+  connection: network_cli
+  gather_facts: false
+  tasks:
+    - name: Add a firewall rule to drop DNS traffic with long FQDN
+      routeros_command:
+        commands:
+          - /ip/firewall/filter/add chain=forward protocol=udp dst-port=53 content="hola.que.tal.como.estas.que.como.what.que.as.aaaa" action=drop comment="Block DNS exfiltration - Long FQDN"

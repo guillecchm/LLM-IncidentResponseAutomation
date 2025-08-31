@@ -1,0 +1,55 @@
+- name: Mitigate SSH Brute Force Attack
+  hosts: lubh1
+  become: yes
+  tasks:
+    - name: Ensure iptables-persistent is installed for saving rules
+      ansible.builtin.package:
+        name: iptables-persistent
+        state: present
+
+    - name: Block SSH access from specific attacker IP (192.168.56.1)
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        destination_port: 22
+        source: 192.168.56.1
+        jump: DROP
+        state: present
+
+    - name: Allow established and related SSH connections to prevent blocking legitimate sessions
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        destination_port: 22
+        ctstate: ESTABLISHED,RELATED
+        jump: ACCEPT
+        state: present
+
+    - name: Add iptables rule to track new SSH connections for brute force detection (set)
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        destination_port: 22
+        syn: true
+        match: recent
+        rlistname: SSH_BRUTE
+        rsource: yes
+        set: yes
+        state: present
+
+    - name: Add iptables rule to drop SSH connections if brute force threshold is met (drop)
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        destination_port: 22
+        syn: true
+        match: recent
+        rlistname: SSH_BRUTE
+        seconds: 300
+        hitcount: 5
+        rsource: yes
+        jump: DROP
+        state: present
+
+    - name: Save current iptables rules to persist across reboots
+      ansible.builtin.command: netfilter-persistent save

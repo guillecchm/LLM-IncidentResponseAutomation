@@ -1,0 +1,29 @@
+---
+- name: Mitigate Wazuh agent buffer flooding and prevent potential DoS against host
+  hosts: lubh3
+  become: true
+  tasks:
+    - name: Restart Wazuh agent to clear flooded buffer
+      ansible.builtin.service:
+        name: wazuh-agent
+        state: restarted
+        enabled: true
+      
+    - name: Add iptables rule to rate-limit new inbound TCP connections
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        ctstate: NEW
+        match: limit
+        limit: "60/minute"
+        limit_burst: "20"
+        jump: ACCEPT
+        comment: "Allow new TCP connections up to rate limit to prevent DoS"
+
+    - name: Add iptables rule to drop excessive new inbound TCP connections
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        ctstate: NEW
+        jump: DROP
+        comment: "Drop excessive new TCP connections exceeding rate limit"

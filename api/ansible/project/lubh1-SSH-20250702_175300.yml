@@ -1,0 +1,29 @@
+- name: Mitigate SSH brute force attack on lubh1
+  hosts: lubh1
+  become: yes
+  tasks:
+    - name: Add iptables rule to block incoming SSH from attacker IP
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        destination_port: 22
+        source: 192.168.56.1
+        jump: DROP
+        state: present
+        comment: Block SSH brute force from 192.168.56.1
+    - name: Persist iptables rules
+      ansible.builtin.command: netfilter-persistent save
+
+- name: Prevent router from initiating SSH to other subnets
+  hosts: router1
+  gather_facts: no
+  tasks:
+    - name: Remove existing firewall rule to ensure idempotency
+      community.routeros.command:
+        commands:
+          - '/ip firewall filter remove [find comment="ansible-block-ssh-from-router-to-other-subnets"]'
+      ignore_errors: yes
+    - name: Add firewall rule to block router-initiated SSH to other subnets
+      community.routeros.command:
+        commands:
+          - '/ip firewall filter add chain=output protocol=tcp dst-port=22 src-address=192.168.56.1 dst-address=!192.168.56.0/24 action=drop comment="ansible-block-ssh-from-router-to-other-subnets"'

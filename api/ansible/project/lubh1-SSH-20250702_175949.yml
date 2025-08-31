@@ -1,0 +1,27 @@
+- name: Block SSH brute force attacker on target host
+  hosts: lubh1
+  become: yes
+  tasks:
+    - name: Add iptables rule to drop incoming SSH from attacker IP
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        destination_port: 22
+        source: 192.168.1.4
+        jump: DROP
+        state: present
+        comment: Block SSH brute force from 192.168.1.4
+
+- name: Contain potential attacker by restricting outgoing SSH
+  hosts: lubh3
+  become: yes
+  tasks:
+    - name: Add iptables rule to drop outgoing SSH to admin subnet
+      ansible.builtin.iptables:
+        chain: OUTPUT
+        protocol: tcp
+        destination_port: 22
+        destination: 192.168.0.0/24
+        jump: DROP
+        state: present
+        comment: Block outgoing SSH to admin subnet from potentially compromised workstation

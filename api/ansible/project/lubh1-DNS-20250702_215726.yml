@@ -1,0 +1,24 @@
+---
+- name: Mitigate DNS Exfiltration - Block Outgoing DNS from Host
+  hosts: lubh1
+  become: true
+  tasks:
+    - name: Block outgoing DNS traffic to local DNS resolver
+      ansible.builtin.iptables:
+        chain: OUTPUT
+        protocol: udp
+        destination_port: 53
+        destination: 192.168.1.1
+        jump: DROP
+        comment: "Blocked outgoing DNS to local resolver due to suspected DNS exfiltration"
+        state: present
+
+- name: Prevent Future DNS Exfiltration - Sinkhole Malicious Domain on Router
+  hosts: router1
+  connection: network_cli
+  gather_facts: false
+  tasks:
+    - name: Add static DNS entry for malicious.com to sinkhole it
+      community.routeros.command:
+        commands:
+          - '/ip dns static add name=malicious.com address=127.0.0.1 comment="Sinkhole malicious.com due to DNS exfiltration" unless=[/ip dns static find name=malicious.com]'

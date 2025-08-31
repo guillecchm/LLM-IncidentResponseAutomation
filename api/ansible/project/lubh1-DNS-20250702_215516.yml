@@ -1,0 +1,29 @@
+---
+- name: Mitigate DNS Exfiltration on Compromised Host
+  hosts: lubh1
+  become: true
+  tasks:
+    - name: Block outbound DNS traffic from lubh1 to the internal DNS server
+      ansible.builtin.iptables:
+        chain: OUTPUT
+        destination: 192.168.1.1
+        protocol: udp
+        destination_port: 53
+        jump: DROP
+        comment: "Blocked outbound DNS from lubh1 to prevent exfiltration attempts via internal resolver"
+        state: present
+
+- name: Configure Router to Block Malicious DNS Queries
+  hosts: router1
+  connection: network_cli
+  gather_facts: false
+  tasks:
+    - name: Add Layer7 protocol definition for malicious.com to detect exfiltration
+      community.routeros.command:
+        commands:
+          - /ip firewall layer7-protocol add name="dns-exfil-malicious" regexp="malicious\\.com" comment="Regex for malicious.com DNS exfiltration domain"
+
+    - name: Add firewall filter rule to drop DNS requests for malicious.com
+      community.routeros.command:
+        commands:
+          - /ip firewall filter add chain=forward protocol=udp dst-port=53 layer7-protocol="dns-exfil-malicious" action=drop comment="Drop DNS exfiltration attempts to malicious.com from any internal host"

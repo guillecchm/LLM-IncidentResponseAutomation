@@ -1,0 +1,20 @@
+---
+- name: Mitigate Wazuh Agent Flooding on lubh3
+  hosts: lubh3
+  become: true
+  tasks:
+    - name: Set event_channel_size in Wazuh agent configuration
+      ansible.builtin.xml:
+        path: /var/ossec/etc/ossec.conf
+        xpath: /ossec_config/client/queue/event_channel_size
+        value: 262144
+        state: present
+        prettyprint: yes
+        fail_if_not_found: no
+      notify: Restart wazuh-agent
+
+  handlers:
+    - name: Restart wazuh-agent
+      ansible.builtin.service:
+        name: wazuh-agent
+        state: restarted

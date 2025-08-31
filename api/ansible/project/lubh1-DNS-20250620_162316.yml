@@ -1,0 +1,38 @@
+---
+- hosts: lubh1
+  become: true
+  tasks:
+    - name: Block DNS exfiltration attempt by adding a firewall rule using iptables
+      iptables:
+        chain: INPUT
+        protocol: udp
+        source: 192.168.1.2
+        destination_port: 53
+        match: string
+        string: "hola.que.tal.como.estas.que.como.what.que.as.aaaa"
+        jump: DROP
+        comment: "Drop DNS exfiltration attempt"
+        state: present
+    - name: Block DNS exfiltration attempt by adding a firewall rule using iptables (OUTPUT Chain)
+      iptables:
+        chain: OUTPUT
+        protocol: udp
+        source: 192.168.1.2
+        destination_port: 53
+        match: string
+        string: "hola.que.tal.como.estas.que.como.what.que.as.aaaa"
+        jump: DROP
+        comment: "Drop DNS exfiltration attempt"
+        state: present
+- hosts: Mikrotik01
+  connection: network_cli
+  gather_facts: false
+  tasks:
+    - name: Add address list entry to block DNS exfiltration attempts
+      routeros_command:
+        commands:
+          - /ip/firewall/address-list/add address=192.168.1.2 list=dns_exfiltration comment="Blocked DNS exfiltration source"
+    - name: Add firewall rule to drop DNS queries from the address list
+      routeros_command:
+        commands:
+          - /ip/firewall/filter/add chain=forward src-address-list=dns_exfiltration dst-port=53 protocol=udp action=drop comment="Drop DNS Exfiltration"

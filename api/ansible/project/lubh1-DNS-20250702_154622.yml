@@ -1,0 +1,39 @@
+---
+- name: Mitigate DNS Exfiltration Attack
+  hosts: lubh1
+  gather_facts: false
+  tasks:
+    - name: Block DNS requests to suspicious domain using iptables
+      become: true
+      iptables:
+        chain: OUTPUT
+        protocol: udp
+        destination_port: 53
+        match: string
+        string: "ppa.launchpadcontent.net"
+        algo: bm
+        jump: DROP
+        comment: "Block DNS exfiltration attempt to ppa.launchpadcontent.net"
+    - name: Block DNS requests to suspicious domain using iptables
+      become: true
+      iptables:
+        chain: OUTPUT
+        protocol: tcp
+        destination_port: 53
+        match: string
+        string: "ppa.launchpadcontent.net"
+        algo: bm
+        jump: DROP
+        comment: "Block DNS exfiltration attempt to ppa.launchpadcontent.net"
+
+- name: Mitigate DNS Exfiltration Attack - Block Agent on Mikrotik
+  hosts: ansible-server
+  gather_facts: false
+  tasks:
+    - name: Block source IP on Mikrotik Router
+      community.routeros.routeros_command:
+        host: 192.168.0.1
+        username: admin
+        password: password
+        commands:
+          - /ip/firewall/filter/add chain=forward src-address=192.168.1.2 action=drop comment="Block DNS exfiltration source IP"

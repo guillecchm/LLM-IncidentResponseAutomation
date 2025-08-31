@@ -1,0 +1,44 @@
+---
+- name: SSH Brute Force Mitigation
+  hosts: lubh1
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Block the offending IP address using iptables
+      iptables:
+        chain: INPUT
+        source: 192.168.56.1
+        protocol: tcp
+        destination_port: 22
+        jump: DROP
+        comment: "Blocked IP due to SSH brute force attempt"
+        state: present
+      register: iptables_result
+
+    - name: Save iptables rules (if changed)
+      command: iptables-save
+      args:
+        creates: /etc/iptables/rules.v4
+      when: iptables_result.changed
+
+    - name: Persist iptables rules across reboots
+      copy:
+        src: /etc/iptables/rules.v4
+        dest: /etc/network/if-pre-up.d/iptablesload
+        owner: root
+        group: root
+        mode: '0755'
+      when: iptables_result.changed
+
+    - name: Reload iptables rules at boot
+      file:
+        path: /etc/network/if-pre-up.d/iptablesload
+        state: link
+        src: /etc/network/if-post-down.d/iptables-persistent
+      when: iptables_result.changed
+
+    - name: Ensure iptables-persistent is installed
+      apt:
+        name: iptables-persistent
+        state: present
+      when: iptables_result.changed

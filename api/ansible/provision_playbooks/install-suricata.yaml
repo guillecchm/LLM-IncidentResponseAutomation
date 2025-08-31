@@ -1,0 +1,64 @@
+---
+- name: Install SURICATA on host machines alongside WAZUH
+  hosts: all
+  gather_facts: false
+  become: yes
+  tasks:
+  - name: Add the Suricata stable PPA
+    ansible.builtin.apt_repository:
+      repo: ppa:oisf/suricata-stable
+      state: present
+  
+  - name: Update apt cache
+    ansible.builtin.apt:
+      update_cache: yes
+  
+  - name: Install Suricata
+    ansible.builtin.apt:
+      name: suricata
+      state: present
+
+  - name: Create a directory if it does not exist
+    ansible.builtin.file:
+      path: /etc/suricata/rules
+      state: directory
+      mode: '0640'
+
+  - name: Download Emerging Threats suricata rule set
+    ansible.builtin.get_url:
+      url: https://rules.emergingthreats.net/open/suricata-6.0.8/emerging.rules.tar.gz
+      dest: /tmp/emerging.rules.tar.gz
+  
+  - name: Create temp directory
+    ansible.builtin.file:
+      path: /tmp/emergin_rules
+      state: directory
+      mode: '0755'
+
+  - name: Unarchive Emergin Threats file
+    ansible.builtin.unarchive:
+      src: /tmp/emerging.rules.tar.gz
+      dest: /tmp/emergin_rules
+      remote_src: yes
+
+  - name: Copy rules into suricata rules dir with proper permissions
+    ansible.builtin.copy:
+      src: /tmp/emergin_rules/rules/
+      dest: /etc/suricata/rules/
+      owner: root
+      group: root
+      mode: '0644'
+      remote_src: true
+
+  - name: Copy suricata.yaml file to remote
+    ansible.builtin.copy:
+      src: suricata.yaml
+      dest: /etc/suricata/suricata.yaml
+      owner: root
+      group: root
+      mode: '0644'
+  
+  - name: Restart service suricata, in all cases
+    ansible.builtin.service:
+      name: suricata
+      state: restarted

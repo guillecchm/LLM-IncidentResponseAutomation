@@ -1,0 +1,19 @@
+---
+- name: SSH Brute Force Mitigation
+  hosts: lubh1
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Block IP address using iptables
+      iptables:
+        chain: INPUT
+        source: 192.168.56.1
+        protocol: tcp
+        destination_port: 22
+        jump: DROP
+        comment: "Blocked SSH brute force attempt from 192.168.56.1"
+        state: present
+      register: iptables_rule
+    - name: Save iptables rules
+      command: iptables-save
+      when: iptables_rule.changed

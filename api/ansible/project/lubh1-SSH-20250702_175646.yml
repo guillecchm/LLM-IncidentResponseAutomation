@@ -1,0 +1,47 @@
+---
+- name: Mitigate SSH brute force on attacked host
+  hosts: lubh1
+  become: yes
+  tasks:
+    - name: Ensure iptables rule exists to block incoming SSH from attacker
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        destination_port: 22
+        source: 192.168.1.4
+        jump: DROP
+        state: present
+        comment: "Block SSH brute force from 192.168.1.4"
+      notify: Save iptables rules
+
+  handlers:
+    - name: Save iptables rules
+      ansible.builtin.command: netfilter-persistent save
+      listen: "Save iptables rules"
+
+- name: Prevent attacker from spreading SSH attacks to other subnets via router
+  hosts: router1
+  tasks:
+    - name: Check if rule blocking SSH from 192.168.1.4 to 192.168.0.0/24 exists
+      community.routeros.command:
+        commands:
+          - '/ip firewall filter print terse where src-address="192.168.1.4" dst-address="192.168.0.0/24" dst-port="22" protocol="tcp" action="drop"'
+      register: rule_check_to_0_subnet
+
+    - name: Add rule to block SSH from 192.168.1.4 to 192.168.0.0/24
+      community.routeros.command:
+        commands:
+          - '/ip firewall filter add chain=forward src-address=192.168.1.4 dst-address=192.168.0.0/24 dst-port=22 protocol=tcp action=drop comment="Block SSH from lubh3 to admin subnet"'
+      when: rule_check_to_0_subnet.stdout | trim == ""
+
+    - name: Check if rule blocking SSH from 192.168.1.4 to 192.168.56.0/24 exists
+      community.routeros.command:
+        commands:
+          - '/ip firewall filter print terse where src-address="192.168.1.4" dst-address="192.168.56.0/24" dst-port="22" protocol="tcp" action="drop"'
+      register: rule_check_to_56_subnet
+
+    - name: Add rule to block SSH from 192.168.1.4 to 192.168.56.0/24
+      community.routeros.command:
+        commands:
+          - '/ip firewall filter add chain=forward src-address=192.168.1.4 dst-address=192.168.56.0/24 dst-port=22 protocol=tcp action=drop comment="Block SSH from lubh3 to general internal subnet"'
+      when: rule_check_to_56_subnet.stdout | trim == ""

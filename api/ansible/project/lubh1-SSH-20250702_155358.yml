@@ -1,0 +1,25 @@
+---
+- name: Mitigate SSH Brute Force Attack
+  hosts: lubh1
+  gather_facts: false
+  tasks:
+    - name: Block IP address on the host's firewall
+      become: true
+      ansible.builtin.iptables:
+        chain: INPUT
+        source: 192.168.1.4
+        protocol: tcp
+        destination_port: 22
+        jump: DROP
+        comment: "Blocking SSH brute force attack from 192.168.1.4"
+
+- name: Mitigate SSH Brute Force Attack on Mikrotik Router
+  hosts: localhost
+  gather_facts: false
+  connection: local
+  tasks:
+    - name: Block IP address on Mikrotik
+      community.routeros.routeros_command:
+        commands:
+          - /ip/firewall/filter/add chain=forward src-address=192.168.1.4 protocol=tcp dst-port=22 action=drop comment="Blocking SSH brute force attack from 192.168.1.4"
+      delegate_to: ansible-server

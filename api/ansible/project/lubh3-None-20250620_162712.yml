@@ -1,0 +1,40 @@
+---
+- name: Mitigate potential SSH scan from lubh3
+  hosts: lubh3
+  gather_facts: false
+  tasks:
+    - name: Block the destination IP address using iptables
+      become: true
+      iptables:
+        chain: INPUT
+        protocol: tcp
+        source: "{{ ansible_host }}"
+        destination: 192.168.1.2
+        destination_port: 22
+        jump: DROP
+        comment: "Blocked potential SSH scan to 192.168.1.2"
+        state: present
+- name: Block source IP on Mikrotik Router
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Add IP address to address list
+      routeros_command:
+        commands:
+          - /ip/firewall/address-list/add address=192.168.1.4 list=ssh_blacklist comment="Blocked potential SSH scanner"
+      delegate_to: 192.168.0.1
+      vars:
+        ansible_connection: network_cli
+        ansible_network_os: routeros
+        ansible_user: admin
+        ansible_ssh_pass: password
+    - name: Add firewall rule to drop traffic from address list
+      routeros_command:
+        commands:
+          - /ip/firewall/filter/add chain=forward src-address-list=ssh_blacklist action=drop comment="Drop traffic from SSH blacklist"
+      delegate_to: 192.168.0.1
+      vars:
+        ansible_connection: network_cli
+        ansible_network_os: routeros
+        ansible_user: admin
+        ansible_ssh_pass: password

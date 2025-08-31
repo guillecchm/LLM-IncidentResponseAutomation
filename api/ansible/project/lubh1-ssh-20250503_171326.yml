@@ -1,0 +1,22 @@
+---
+- name: SSH Brute Force Mitigation
+  hosts: lubh1
+  gather_facts: false
+  become: true
+
+  tasks:
+    - name: Get current IP address in iptables sshdrop chain if it exists
+      command: iptables -S INPUT | grep -E "DROP.*192.168.56.1" | awk '{print $4}'
+      register: current_ips
+      changed_when: false
+      failed_when: false
+
+    - name: Block the source IP address using iptables
+      iptables:
+        chain: INPUT
+        protocol: tcp
+        source: 192.168.56.1
+        destination_port: 22
+        jump: DROP
+        comment: "Blocked SSH brute force attempt from 192.168.56.1"
+      when: "'192.168.56.1' not in current_ips.stdout"

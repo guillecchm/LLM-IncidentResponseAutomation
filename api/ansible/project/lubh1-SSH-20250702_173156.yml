@@ -1,0 +1,51 @@
+- name: Mitigate SSH brute force attack on victim host (lubh1)
+  hosts: lubh1
+  gather_facts: false
+  become: true
+
+  tasks:
+    - name: Ensure iptables is installed
+      ansible.builtin.apt:
+        name: iptables
+        state: present
+
+    - name: Block specific attacker IP (192.168.1.4) for SSH on victim host
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        destination_port: 22
+        source: 192.168.1.4
+        jump: DROP
+        state: present
+        rule_num: 1
+
+    - name: Implement SSH brute force rate limiting
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        destination_port: 22
+        match: state
+        state: NEW
+        match: recent
+        name: SSH_BRUTE_FORCE
+        set_name: SSH_BRUTE_FORCE
+        update: yes
+        seconds: 60
+        hitcount: 5
+        jump: DROP
+        state: present
+
+- name: Contain attacker IP at the network router
+  hosts: router1
+  gather_facts: false
+
+  tasks:
+    - name: Block SSH from attacker IP (192.168.1.4) to admin subnet at router
+      community.routeros.command:
+        commands:
+          - '/ip firewall filter add chain=forward action=drop protocol=tcp dst-port=22 src-address=192.168.1.4 dst-address=192.168.0.0/24 place-before=0 comment="Block SSH from suspected attacker to Admin Subnet"'
+
+    - name: Block SSH from attacker IP (192.168.1.4) to mixed/office subnet at router
+      community.routeros.command:
+        commands:
+          - '/ip firewall filter add chain=forward action=drop protocol=tcp dst-port=22 src-address=192.168.1.4 dst-address=192.168.56.0/24 place-before=0 comment="Block SSH from suspected attacker to Mixed Subnet"'

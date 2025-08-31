@@ -1,0 +1,23 @@
+```yaml
+---
+- name: Mitigate SYN Scan on webserver
+  hosts: webserver
+  become: true
+  tasks:
+    - name: Block the malicious IP address using iptables
+      ansible.builtin.iptables:
+        chain: INPUT
+        source: 192.168.1.4
+        jump: DROP
+        comment: "Blocked IP due to SYN scan attack from 192.168.1.4"
+
+- name: Router configuration to prevent future SYN scans
+  hosts: router1
+  connection: network_cli
+  gather_facts: false
+  tasks:
+    - name: Add firewall rule to drop all traffic from attacker to victim
+      community.routeros.command:
+        commands:
+          - /ip firewall filter add chain=forward src-address=192.168.1.4 dst-address=172.12.0.2 action=drop comment="Drop traffic from 192.168.1.4 to 172.12.0.2 due to SYN scan"
+```

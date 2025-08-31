@@ -1,0 +1,13 @@
+- name: Mitigate SSH brute force attack
+  hosts: lubh1
+  become: yes
+  tasks:
+    - name: Block incoming SSH from attacker IP
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        destination_port: 22
+        source: 192.168.1.4
+        jump: DROP
+        comment: "Block SSH brute force attacker from 192.168.1.4"
+        state: present

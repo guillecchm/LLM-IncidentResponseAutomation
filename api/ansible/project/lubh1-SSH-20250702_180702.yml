@@ -1,0 +1,32 @@
+- name: Mitigate SSH brute force on target host
+  hosts: lubh1
+  become: yes
+  vars:
+    attacker_ip: "192.168.1.4"
+  tasks:
+    - name: Block SSH from attacker IP using iptables
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        destination_port: 22
+        source: "{{ attacker_ip }}"
+        jump: DROP
+        state: present
+        comment: "Block SSH brute force from {{ attacker_ip }}"
+
+- name: Mitigate SSH brute force at router level
+  hosts: router1
+  vars:
+    attacker_ip: "192.168.1.4"
+    target_ip: "192.168.1.2"
+  tasks:
+    - name: Check if firewall rule exists on MikroTik
+      community.routeros.command:
+        commands:
+          - '/ip firewall filter print where src-address="{{ attacker_ip }}" and dst-address="{{ target_ip }}" and protocol="tcp" and dst-port="22" and chain="forward"'
+      register: mikrotik_rule_check
+    - name: Add firewall rule to block SSH from attacker IP on MikroTik if not exists
+      community.routeros.command:
+        commands:
+          - '/ip firewall filter add chain=forward action=drop src-address="{{ attacker_ip }}" dst-address="{{ target_ip }}" protocol=tcp dst-port=22 comment="SSH Brute Force Block - {{ attacker_ip }} to {{ target_ip }}"'
+      when: mikrotik_rule_check.stdout[0] == ''

@@ -1,0 +1,17 @@
+---
+- name: Mitigate DNS Exfiltration Attack
+  hosts: lubh1
+  gather_facts: false
+  tasks:
+    - name: Block DNS requests for long FQDNs with iptables
+      become: true
+      iptables:
+        chain: OUTPUT
+        protocol: udp
+        destination_port: 53
+        match: string
+        string: "archive.ubuntu.com"
+        algo: kmp
+        jump: DROP
+        comment: "Block DNS exfiltration attempt - FQDN too long"
+        state: present

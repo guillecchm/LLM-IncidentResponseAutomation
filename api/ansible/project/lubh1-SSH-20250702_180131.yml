@@ -1,0 +1,21 @@
+- name: Respond to SSH Brute Force - Target Host Mitigation
+  hosts: lubh1
+  become: true
+  tasks:
+    - name: Block incoming SSH from attacker IP
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        destination_port: "22"
+        source: 192.168.1.4
+        jump: DROP
+        comment: "Block SSH brute force attempts from 192.168.1.4 (Ansible mitigation)"
+        state: present
+
+- name: Respond to SSH Brute Force - Router Level Prevention
+  hosts: router1
+  tasks:
+    - name: Block attacker IP from initiating SSH connections to other subnets via router
+      community.routeros.command:
+        commands:
+          - '/ip firewall filter add chain=forward action=drop protocol=tcp dst-port=22 src-address=192.168.1.4 comment="Block SSH from suspected attacker to other subnets (Ansible mitigation)"'

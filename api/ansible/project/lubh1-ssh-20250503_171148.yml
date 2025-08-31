@@ -1,0 +1,26 @@
+---
+- name: SSH Brute Force Mitigation
+  hosts: lubh1
+  become: true
+  tasks:
+    - name: Get current iptables rules
+      command: iptables -S
+      register: current_iptables_rules
+      changed_when: false
+
+    - name: Block the IP address attempting the brute force attack
+      iptables:
+        chain: INPUT
+        source: 192.168.56.1
+        protocol: tcp
+        destination_port: 22
+        jump: DROP
+        comment: "Blocked IP due to SSH brute force attempt"
+      when: "' -A INPUT -s 192.168.56.1 -p tcp --dport 22 -j DROP' not in current_iptables_rules.stdout"
+
+    - name: Log the incident to a file (optional - for auditing)
+      lineinfile:
+        path: /var/log/ssh_brute_force_attempts.log
+        line: "Timestamp: 2025-05-03T17:11:45.477+0000, Attacker IP: 192.168.56.1"
+        create: true
+      when: "'Timestamp: 2025-05-03T17:11:45.477+0000, Attacker IP: 192.168.56.1' not in lookup('file', '/var/log/ssh_brute_force_attempts.log', errors='ignore')"

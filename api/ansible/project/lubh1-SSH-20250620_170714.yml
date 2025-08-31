@@ -1,0 +1,28 @@
+---
+- hosts: lubh1
+  become: true
+  tasks:
+    - name: Block the offending IP address using iptables
+      iptables:
+        chain: INPUT
+        source: 192.168.1.4
+        jump: DROP
+        comment: "Blocked SSH brute force attack from 192.168.1.4"
+        state: present
+        protocol: tcp
+        destination_port: 22
+      register: iptables_result
+
+    - name: Save iptables rules
+      command: iptables-save
+      when: iptables_result.changed
+
+- hosts: Mikrotik01
+  connection: network_cli
+  gather_facts: false
+
+  tasks:
+    - name: Block IP address on Mikrotik router
+      routeros_command:
+        commands:
+          - /ip/firewall/filter/add chain=forward src-address=192.168.1.4 action=drop comment="Blocked SSH brute force attack from 192.168.1.4"

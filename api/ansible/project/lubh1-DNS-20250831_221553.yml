@@ -1,0 +1,34 @@
+- name: Mitigate DNS Exfiltration on compromised host
+  hosts: lubh1
+  become: true
+  tasks:
+    - name: Blackhole malicious DNS exfiltration domain in /etc/hosts
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        line: "0.0.0.0 dv0g7oooksl88k3x9r2ovxlgzz7qnq.adbitfmco8ketfgobjx2ufun4gidss.umu0m6e50llkz0hr6ozvrml539eq75.malicious.server"
+        create: true
+        owner: root
+        group: root
+        mode: '0644'
+        state: present
+        insertafter: EOF
+        comment: "Blocked due to possible DNS exfiltration"
+
+    - name: Drop outbound DNS traffic from host to unauthorized DNS servers
+      ansible.builtin.iptables:
+        chain: OUTPUT
+        protocol: udp
+        destination_port: 53
+        destination: "!192.168.1.1"
+        jump: DROP
+        comment: "Drop outbound DNS to unauthorized servers after DNS exfil attempt"
+
+- name: Prevent unauthorized DNS forwarding on router
+  hosts: router1
+  connection: network_cli
+  gather_facts: false
+  tasks:
+    - name: Add firewall rule to drop unauthorized DNS from office LAN to WAN
+      community.routeros.command:
+        commands:
+          - /ip firewall filter add chain=forward protocol=udp src-address=192.168.1.0/24 dst-port=53 out-interface=ether1 action=drop comment="Drop unauthorized DNS from office LAN to WAN"

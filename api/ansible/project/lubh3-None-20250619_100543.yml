@@ -1,0 +1,24 @@
+---
+- name: Mitigate Potential SSH Scan from lubh3
+  hosts: lubh3
+  gather_facts: false
+  tasks:
+    - name: Block SSH access from source IP using iptables
+      become: true
+      iptables:
+        chain: INPUT
+        source: 192.168.1.4
+        protocol: tcp
+        destination_port: 22
+        jump: DROP
+        comment: "Blocked SSH scan attempt from 192.168.1.4"
+        state: present
+        
+- name: Mitigate Potential SSH Scan through Mikrotik
+  hosts: ansible-server
+  gather_facts: false
+  tasks:
+    - name: Add firewall rule to Mikrotik
+      community.routeros.routeros_command:
+        commands:
+          - /ip/firewall/filter/add chain=forward src-address=192.168.1.4 dst-port=22 protocol=tcp action=drop comment="Mitigate Potential SSH Scan from 192.168.1.4"
