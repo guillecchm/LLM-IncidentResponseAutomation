@@ -1,0 +1,85 @@
+<!--
+  -  Suricata rules
+  -  Created by Wazuh, Inc.
+  -  Copyright (C) 2015, Wazuh Inc.
+  -  This program is a free software; you can redistribute it and/or modify it under the terms of GPLv2.
+-->
+
+<!-- ID: 86600 - 86699 -->
+
+<group name="ids,suricata,">
+
+    <!--
+    {"timestamp":"2016-05-02T17:46:48.515262+0000","flow_id":1234,"in_iface":"eth0","event_type":"alert","src_ip":"16.10.10.10","src_port":5555,"dest_ip":"16.10.10.11","dest_port":80,"proto":"TCP","alert":{"action":"allowed","gid":1,"signature_id":2019236,"rev":3,"signature":"ET WEB_SERVER Possible CVE-2014-6271 Attempt in HTTP Version Number","category":"Attempted Administrator Privilege Gain","severity":1},"payload":"abcde","payload_printable":"hi test","stream":0,"host":"suricata.com"}
+    -->
+    <rule id="86600" level="0">
+        <decoded_as>json</decoded_as>
+        <field name="timestamp">\.+</field>
+        <field name="event_type">\.+</field>
+        <description>Suricata messages.</description>
+        <options>no_full_log</options>
+    </rule>
+
+    <rule id="86601" level="3">
+        <if_sid>86600</if_sid>
+        <field name="event_type">^alert$</field>
+        <description>Suricata: Alert - $(alert.signature)</description>
+        <options>no_full_log</options>
+    </rule>
+
+    <rule id="86602" level="0">
+        <if_sid>86600</if_sid>
+        <field name="event_type">^http$</field>
+        <description>Suricata: HTTP.</description>
+        <options>no_full_log</options>
+    </rule>
+
+    <rule id="86603" level="0">
+        <if_sid>86600</if_sid>
+        <field name="event_type">^dns$</field>
+        <description>Suricata: DNS.</description>
+        <options>no_full_log</options>
+    </rule>
+
+    <rule id="86604" level="0">
+        <if_sid>86600</if_sid>
+        <field name="event_type">^tls$</field>
+        <description>Suricata: TLS.</description>
+        <options>no_full_log</options>
+    </rule>
+
+  <!-- Map severity 1 to rule level 15 -->
+  <rule id="86681" level="15">
+    <if_sid>86601</if_sid>
+    <field name="alert.severity">^1$</field>
+    <description>Suricata: Alert - $(alert.signature)</description>
+  </rule>
+
+  <!-- Map severity 2 to rule level 10 -->
+  <rule id="86682" level="10">
+    <if_sid>86601</if_sid>
+    <field name="alert.severity">^2$</field>
+    <description>Suricata: Alert - $(alert.signature)</description>
+  </rule>
+
+  <!-- Map severity 3 to rule level 5 -->
+  <rule id="86683" level="5">
+    <if_sid>86601</if_sid>
+    <field name="alert.severity">^3$</field>
+    <description>Suricata: Alert - $(alert.signature)</description>
+  </rule>
+
+  <!-- Map severity 4 to rule level 3 -->
+  <rule id="86684" level="3">
+    <if_sid>86601</if_sid>
+    <field name="alert.severity">^4$</field>
+    <description>Suricata: Alert - $(alert.signature)</description>
+  </rule>
+
+  <!-- Map any severity not 1-4 to rule level 1 -->
+  <rule id="86685" level="1">
+    <if_sid>86601</if_sid>
+    <field name="alert.severity" type="pcre2">^(?![1234]$).*</field>
+    <description>Suricata: Alert - $(alert.signature)</description>
+  </rule>
+</group>
