@@ -1,0 +1,76 @@
+{
+    "timestamp": "2025-08-21T17:48:09.996+0000",
+    "rule": {
+        "level": 10,
+        "description": "sshd: brute force trying to get access to the system. Authentication failed.",
+        "id": "5763",
+        "mitre": {
+            "id": [
+                "T1110"
+            ],
+            "tactic": [
+                "Credential Access"
+            ],
+            "technique": [
+                "Brute Force"
+            ]
+        },
+        "frequency": 8,
+        "firedtimes": 63,
+        "mail": false,
+        "groups": [
+            "syslog",
+            "sshd",
+            "authentication_failures"
+        ],
+        "gdpr": [
+            "IV_35.7.d",
+            "IV_32.2"
+        ],
+        "hipaa": [
+            "164.312.b"
+        ],
+        "nist_800_53": [
+            "SI.4",
+            "AU.14",
+            "AC.7"
+        ],
+        "pci_dss": [
+            "11.4",
+            "10.2.4",
+            "10.2.5"
+        ],
+        "tsc": [
+            "CC6.1",
+            "CC6.8",
+            "CC7.2",
+            "CC7.3"
+        ]
+    },
+    "agent": {
+        "id": "004",
+        "name": "webserver",
+        "ip": "172.12.0.2"
+    },
+    "manager": {
+        "name": "wazuh-server"
+    },
+    "id": "1755798489.19173429",
+    "previous_output": "Aug 21 17:48:07 webserver sshd[15695]: Failed password for guille from 192.168.1.4 port 49092 ssh2\nAug 21 17:48:07 webserver sshd[15700]: Failed password for guille from 192.168.1.4 port 49134 ssh2\nAug 21 17:48:07 webserver sshd[15699]: Failed password for guille from 192.168.1.4 port 49124 ssh2\nAug 21 17:48:07 webserver sshd[15696]: Failed password for guille from 192.168.1.4 port 49106 ssh2\nAug 21 17:46:52 webserver sshd[15531]: Failed password for guille from 192.168.1.4 port 53586 ssh2\nAug 21 17:46:52 webserver sshd[15541]: Failed password for guille from 192.168.1.4 port 53690 ssh2\nAug 21 17:46:52 webserver sshd[15540]: Failed password for guille from 192.168.1.4 port 53674 ssh2",
+    "full_log": "Aug 21 17:48:08 webserver sshd[15702]: Failed password for guille from 192.168.1.4 port 49146 ssh2",
+    "predecoder": {
+        "program_name": "sshd",
+        "timestamp": "Aug 21 17:48:08",
+        "hostname": "webserver"
+    },
+    "decoder": {
+        "parent": "sshd",
+        "name": "sshd"
+    },
+    "data": {
+        "srcip": "192.168.1.4",
+        "srcport": "49146",
+        "dstuser": "guille"
+    },
+    "location": "journald"
+}

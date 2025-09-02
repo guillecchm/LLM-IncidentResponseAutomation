@@ -1,0 +1,29 @@
+---
+- name: Mitigate DNS Exfiltration on compromised host
+  hosts: lubh1
+  become: true
+  tasks:
+    - name: Blackhole malicious domain in /etc/hosts
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        line: "127.0.0.1 malicious.server"
+        state: present
+        create: true
+        mode: '0644'
+        owner: root
+        group: root
+
+- name: Mitigate DNS Exfiltration on router
+  hosts: router1
+  connection: network_cli
+  gather_facts: false
+  tasks:
+    - name: Add static DNS entry to blackhole malicious domain
+      community.routeros.command:
+        commands:
+          - /ip dns static add name=malicious.server address=0.0.0.0 comment="Blackhole malicious domain due to DNS exfiltration"
+
+    - name: Block direct external DNS queries from compromised host
+      community.routeros.command:
+        commands:
+          - /ip firewall filter add chain=forward src-address=192.168.1.2 protocol=udp dst-port=53 dst-address=!192.168.1.1 action=drop comment="Force DNS queries from lubh1 to internal resolver"

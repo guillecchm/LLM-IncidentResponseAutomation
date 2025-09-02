@@ -1,0 +1,61 @@
+{
+  "agent": {
+    "id": "002",
+    "ip": "192.168.1.3",
+    "name": "lubh2"
+  },
+  "data": {
+    "alert": {
+      "action": "allowed",
+      "category": "Communication With Command and Control Detected",
+      "gid": "1",
+      "rev": "1",
+      "severity": "2",
+      "signature": "Traffic to known C2C IP",
+      "signature_id": "1000005"
+    },
+    "dest_ip": "100.68.52.65",
+    "dest_port": "8080",
+    "direction": "to_server",
+    "event_type": "alert",
+    "flow": {
+      "bytes_toclient": "0",
+      "bytes_toserver": "74",
+      "dest_ip": "100.68.52.65",
+      "dest_port": "8080",
+      "pkts_toclient": "0",
+      "pkts_toserver": "1",
+      "src_ip": "192.168.1.3",
+      "src_port": "42578",
+      "start": "2025-08-28T19:03:35.003129+0200"
+    },
+    "flow_id": "1983768005545907.000000",
+    "in_iface": "enp0s3",
+    "pkt_src": "wire/pcap",
+    "proto": "TCP",
+    "src_ip": "192.168.1.3",
+    "src_port": "42578",
+    "timestamp": "2025-08-28T19:03:35.003129+0200"
+  },
+  "decoder": {
+    "name": "json"
+  },
+  "full_log": "{\"timestamp\":\"2025-08-28T19:03:35.003129+0200\",\"flow_id\":1983768005545907,\"in_iface\":\"enp0s3\",\"event_type\":\"alert\",\"src_ip\":\"192.168.1.3\",\"src_port\":42578,\"dest_ip\":\"100.68.52.65\",\"dest_port\":8080,\"proto\":\"TCP\",\"pkt_src\":\"wire/pcap\",\"alert\":{\"action\":\"allowed\",\"gid\":1,\"signature_id\":1000005,\"rev\":1,\"signature\":\"Traffic to known C2C IP\",\"category\":\"Communication With Command and Control Detected\",\"severity\":2},\"direction\":\"to_server\",\"flow\":{\"pkts_toserver\":1,\"pkts_toclient\":0,\"bytes_toserver\":74,\"bytes_toclient\":0,\"start\":\"2025-08-28T19:03:35.003129+0200\",\"src_ip\":\"192.168.1.3\",\"dest_ip\":\"100.68.52.65\",\"src_port\":42578,\"dest_port\":8080}}",
+  "id": "1756400615.133732",
+  "location": "/var/log/suricata/eve.json",
+  "manager": {
+    "name": "wazuh-server"
+  },
+  "rule": {
+    "description": "Suricata: Alert - Traffic to known C2C IP",
+    "firedtimes": 1,
+    "groups": [
+      "ids",
+      "suricata"
+    ],
+    "id": "86682",
+    "level": 10,
+    "mail": false
+  },
+  "timestamp": "2025-08-28T17:03:35.356+0000"
+}

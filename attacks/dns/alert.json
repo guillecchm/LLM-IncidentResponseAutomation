@@ -1,0 +1,76 @@
+{
+  "agent": {
+    "id": "001",
+    "ip": "192.168.1.2",
+    "name": "lubh1"
+  },
+  "data": {
+    "alert": {
+      "action": "allowed",
+      "category": "Possible DNS Exfiltration Attack Detected",
+      "gid": "1",
+      "rev": "1",
+      "severity": "2",
+      "signature": "Possible DNS Exfiltration - High Entropy Query",
+      "signature_id": "1000003"
+    },
+    "app_proto": "dns",
+    "dest_ip": "192.168.1.1",
+    "dest_port": "53",
+    "direction": "to_server",
+    "dns": {
+      "query": [
+        {
+          "id": 29681,
+          "opcode": 0,
+          "rrname": "omj4i2l7fc2coy606aw6wddp40scij.kqmq2xbn8y4s81ohp3a4p8ge8yd75a.i0u58pfhfcgx819oh9fakw37hoipu0.malicious.server",
+          "rrtype": "A",
+          "tx_id": 0,
+          "type": "query"
+        }
+      ],
+      "version": "2"
+    },
+    "event_type": "alert",
+    "flow": {
+      "bytes_toclient": "0",
+      "bytes_toserver": "169",
+      "dest_ip": "192.168.1.1",
+      "dest_port": "53",
+      "pkts_toclient": "0",
+      "pkts_toserver": "1",
+      "src_ip": "192.168.1.2",
+      "src_port": "39215",
+      "start": "2025-08-27T22:50:25.945311+0200"
+    },
+    "flow_id": "400906746112311.000000",
+    "in_iface": "enp0s3",
+    "pkt_src": "wire/pcap",
+    "proto": "UDP",
+    "src_ip": "192.168.1.2",
+    "src_port": "39215",
+    "timestamp": "2025-08-27T22:50:25.945311+0200",
+    "tx_id": "0"
+  },
+  "decoder": {
+    "name": "json"
+  },
+  "full_log": "{\"timestamp\":\"2025-08-27T22:50:25.945311+0200\",\"flow_id\":400906746112311,\"in_iface\":\"enp0s3\",\"event_type\":\"alert\",\"src_ip\":\"192.168.1.2\",\"src_port\":39215,\"dest_ip\":\"192.168.1.1\",\"dest_port\":53,\"proto\":\"UDP\",\"pkt_src\":\"wire/pcap\",\"tx_id\":0,\"alert\":{\"action\":\"allowed\",\"gid\":1,\"signature_id\":1000003,\"rev\":1,\"signature\":\"Possible DNS Exfiltration - High Entropy Query\",\"category\":\"Possible DNS Exfiltration Attack Detected\",\"severity\":2},\"dns\":{\"version\":2,\"query\":[{\"type\":\"query\",\"id\":29681,\"rrname\":\"omj4i2l7fc2coy606aw6wddp40scij.kqmq2xbn8y4s81ohp3a4p8ge8yd75a.i0u58pfhfcgx819oh9fakw37hoipu0.malicious.server\",\"rrtype\":\"A\",\"tx_id\":0,\"opcode\":0}]},\"app_proto\":\"dns\",\"direction\":\"to_server\",\"flow\":{\"pkts_toserver\":1,\"pkts_toclient\":0,\"bytes_toserver\":169,\"bytes_toclient\":0,\"start\":\"2025-08-27T22:50:25.945311+0200\",\"src_ip\":\"192.168.1.2\",\"dest_ip\":\"192.168.1.1\",\"src_port\":39215,\"dest_port\":53}}",
+  "id": "1756327826.460254",
+  "location": "/var/log/suricata/eve.json",
+  "manager": {
+    "name": "wazuh-server"
+  },
+  "rule": {
+    "description": "Suricata: Alert - Possible DNS Exfiltration - High Entropy Query",
+    "firedtimes": 32,
+    "groups": [
+      "ids",
+      "suricata"
+    ],
+    "id": "86682",
+    "level": 10,
+    "mail": false
+  },
+  "timestamp": "2025-08-27T20:50:26.056+0000"
+}

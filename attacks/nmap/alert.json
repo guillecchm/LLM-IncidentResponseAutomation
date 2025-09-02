@@ -1,0 +1,62 @@
+{
+  "agent": {
+    "id": "004",
+    "ip": "172.12.0.2",
+    "name": "webserver"
+  },
+  "data": {
+    "alert": {
+      "action": "allowed",
+      "category": "Detection of a Network Scan",
+      "gid": "1",
+      "rev": "1",
+      "severity": "2",
+      "signature": "SYN Scan Detected",
+      "signature_id": "1000006"
+    },
+    "dest_ip": "172.12.0.2",
+    "dest_port": "19341",
+    "direction": "to_server",
+    "event_type": "alert",
+    "flow": {
+      "bytes_toclient": "0",
+      "bytes_toserver": "60",
+      "dest_ip": "172.12.0.2",
+      "dest_port": "19341",
+      "pkts_toclient": "0",
+      "pkts_toserver": "1",
+      "src_ip": "192.168.1.4",
+      "src_port": "60336",
+      "start": "2025-08-28T18:05:37.970126+0000"
+    },
+    "flow_id": "507486520344287.000000",
+    "in_iface": "enp0s3",
+    "ip_v": "4",
+    "pkt_src": "wire/pcap",
+    "proto": "TCP",
+    "src_ip": "192.168.1.4",
+    "src_port": "60336",
+    "timestamp": "2025-08-28T18:05:37.970126+0000"
+  },
+  "decoder": {
+    "name": "json"
+  },
+  "full_log": "{\"timestamp\":\"2025-08-28T18:05:37.970126+0000\",\"flow_id\":507486520344287,\"in_iface\":\"enp0s3\",\"event_type\":\"alert\",\"src_ip\":\"192.168.1.4\",\"src_port\":60336,\"dest_ip\":\"172.12.0.2\",\"dest_port\":19341,\"proto\":\"TCP\",\"ip_v\":4,\"pkt_src\":\"wire/pcap\",\"alert\":{\"action\":\"allowed\",\"gid\":1,\"signature_id\":1000006,\"rev\":1,\"signature\":\"SYN Scan Detected\",\"category\":\"Detection of a Network Scan\",\"severity\":2},\"direction\":\"to_server\",\"flow\":{\"pkts_toserver\":1,\"pkts_toclient\":0,\"bytes_toserver\":60,\"bytes_toclient\":0,\"start\":\"2025-08-28T18:05:37.970126+0000\",\"src_ip\":\"192.168.1.4\",\"dest_ip\":\"172.12.0.2\",\"src_port\":60336,\"dest_port\":19341}}",
+  "id": "1756404338.876006",
+  "location": "/var/log/suricata/eve.json",
+  "manager": {
+    "name": "wazuh-server"
+  },
+  "rule": {
+    "description": "Suricata: Alert - SYN Scan Detected",
+    "firedtimes": 9,
+    "groups": [
+      "ids",
+      "suricata"
+    ],
+    "id": "86682",
+    "level": 10,
+    "mail": false
+  },
+  "timestamp": "2025-08-28T18:05:38.348+0000"
+}

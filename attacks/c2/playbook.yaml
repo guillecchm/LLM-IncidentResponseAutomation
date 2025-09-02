@@ -1,0 +1,23 @@
+---
+- name: Mitigate C2 communication on infected host
+  hosts: lubh2
+  become: true
+  tasks:
+    - name: Block outbound traffic to C2 IP using iptables
+      ansible.builtin.iptables:
+        chain: OUTPUT
+        destination: 100.68.52.65
+        destination_port: 8080
+        protocol: tcp
+        jump: DROP
+        comment: "Blocked C2 communication to known malicious IP"
+
+- name: Router configuration to block C2 communication network-wide
+  hosts: router1
+  connection: network_cli
+  gather_facts: false
+  tasks:
+    - name: Add firewall rule to drop C2 traffic to known malicious IP
+      community.routeros.command:
+        commands:
+          - /ip firewall filter add chain=forward dst-address=100.68.52.65 dst-port=8080 protocol=tcp action=drop comment="Drop C2 traffic to known malicious IP"
